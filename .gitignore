@@ -1,0 +1,14 @@
+﻿.env
+.env.local
+.env.production
+node_modules/
+dist/
+build/
+uploads/
+*.log
+*.db
+.DS_Store
+*.zip
+
+nestjs funcional*.json
+*funcional*.json

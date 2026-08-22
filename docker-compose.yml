@@ -1,0 +1,104 @@
+services:
+  # ============================================================================
+  # 1. BASE DE DATOS POSTGRESQL
+  # ============================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: stimi_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-stimi}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-stimi123}
+      POSTGRES_DB: ${DB_NAME:-proyecto_formativo}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-stimi} -d ${DB_NAME:-proyecto_formativo}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - stimi_network
+
+  # ============================================================================
+  # 2. BACKEND NESTJS
+  # ============================================================================
+  backend:
+    build:
+      context: ./NestJS
+      dockerfile: Dockerfile
+    container_name: stimi_backend
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: ${PORT:-3000}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173,http://localhost:80}
+      JWT_SECRET: ${JWT_SECRET}
+      DB_TYPE: postgres
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${DB_USERNAME:-stimi}
+      DB_PASSWORD: ${DB_PASSWORD:-stimi123}
+      DB_NAME: ${DB_NAME:-proyecto_formativo}
+      DB_SYNCHRONIZE: "false"
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USER: ${MAIL_USER}
+      MAIL_PASS: ${MAIL_PASS}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Stimi SENA}
+      WEBHOOK_HENRY_KEY: ${WEBHOOK_HENRY_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      N8N_WEBHOOK_PAGINA: ${N8N_WEBHOOK_PAGINA}
+      N8N_WEBHOOK_KEY: ${N8N_WEBHOOK_KEY}
+      N8N_WEBHOOK_VALIDAR: ${N8N_WEBHOOK_VALIDAR}
+      N8N_WEBHOOK_VALIDAR_KEY: ${N8N_WEBHOOK_VALIDAR_KEY}
+      N8N_WEBHOOK_COORDINADOR: ${N8N_WEBHOOK_COORDINADOR}
+      N8N_WEBHOOK_COORDINADOR_KEY: ${N8N_WEBHOOK_COORDINADOR_KEY}
+    volumes:
+      - backend_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - stimi_network
+
+  # ============================================================================
+  # 3. FRONTEND REACT (VITE + NGINX)
+  # ============================================================================
+  frontend:
+    build:
+      context: ./Proyecto_react
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+        VITE_WHATSAPP_NUMBER: ${VITE_WHATSAPP_NUMBER:-573213779356}
+    container_name: stimi_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - stimi_network
+
+# ==============================================================================
+# VOLÚMENES PERSISTENTES
+# ==============================================================================
+volumes:
+  postgres_data:
+    name: stimi_postgres_data
+  backend_uploads:
+    name: stimi_backend_uploads
+
+# ==============================================================================
+# RED INTERNA
+# ==============================================================================
+networks:
+  stimi_network:
+    name: stimi_network
+    driver: bridge
