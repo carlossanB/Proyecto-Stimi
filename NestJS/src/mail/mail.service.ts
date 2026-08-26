@@ -210,5 +210,126 @@ export class MailService {
       throw error;
     }
   }
+
+  async sendAccountApprovedEmail(to: string, userName: string): Promise<void> {
+    const fromName = this.configService.get<string>('MAIL_FROM_NAME', 'Stimi');
+    const fromUser = this.configService.get<string>('MAIL_USER');
+
+    const html = `
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8" />
+        <style>
+          body { font-family: Arial, sans-serif; background: #f4f4f7; margin: 0; padding: 0; }
+          .wrapper { max-width: 520px; margin: 40px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,.08); }
+          .header { background: #39A900; padding: 32px 24px; text-align: center; }
+          .header h1 { color: #fff; margin: 0; font-size: 22px; letter-spacing: 1px; }
+          .body { padding: 32px 28px; color: #333; }
+          .body p { font-size: 15px; line-height: 1.6; }
+          .highlight-box { background: #f0fdf4; border-left: 4px solid #39A900; padding: 16px; margin: 24px 0; border-radius: 4px; }
+          .highlight-box p { margin: 0; font-size: 14px; color: #166534; font-weight: bold; }
+          .footer { background: #f4f4f7; padding: 16px 24px; text-align: center; font-size: 12px; color: #888; }
+        </style>
+      </head>
+      <body>
+        <div class="wrapper">
+          <div class="header">
+            <h1>✅ ¡Cuenta Aprobada! — Stimi</h1>
+          </div>
+          <div class="body">
+            <p>Hola <strong>${userName || 'Usuario'}</strong>,</p>
+            <p>Te informamos que tu solicitud de registro en la plataforma <strong>Stimi (SENA)</strong> ha sido <strong>aprobada exitosamente</strong> por la Coordinación Académica.</p>
+            <div class="highlight-box">
+              <p>Tu cuenta ya se encuentra activa y tienes acceso completo al sistema.</p>
+            </div>
+            <p>Ya puedes iniciar sesión con tu correo electrónico o documento y tu contraseña registrada para comenzar a gestionar tus informes.</p>
+            <p>Saludos cordiales,<br/>Equipo de Coordinación — Stimi SENA</p>
+          </div>
+          <div class="footer">
+            Este es un correo automático, por favor no respondas a este mensaje.
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    try {
+      await this.transporter.sendMail({
+        from: `"${fromName}" <${fromUser}>`,
+        to,
+        subject: '✅ ¡Tu cuenta ha sido aprobada! — Stimi SENA',
+        html,
+      });
+      this.logger.log(`Account approval email sent successfully to ${to}`);
+    } catch (error: any) {
+      this.logger.error(
+        `Error sending account approval email to ${to}: ${error?.message || error}`,
+        error?.stack,
+      );
+      // No relanzamos para evitar que falle la transacción principal si falla el servidor de correo
+    }
+  }
+
+  async sendAccountRejectedEmail(to: string, userName: string, reason?: string): Promise<void> {
+    const fromName = this.configService.get<string>('MAIL_FROM_NAME', 'Stimi');
+    const fromUser = this.configService.get<string>('MAIL_USER');
+
+    const html = `
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8" />
+        <style>
+          body { font-family: Arial, sans-serif; background: #f4f4f7; margin: 0; padding: 0; }
+          .wrapper { max-width: 520px; margin: 40px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,.08); }
+          .header { background: #D9381E; padding: 32px 24px; text-align: center; }
+          .header h1 { color: #fff; margin: 0; font-size: 22px; letter-spacing: 1px; }
+          .body { padding: 32px 28px; color: #333; }
+          .body p { font-size: 15px; line-height: 1.6; }
+          .obs-box { background: #fff5f5; border-left: 4px solid #D9381E; padding: 16px; margin: 24px 0; border-radius: 4px; color: #991b1b; }
+          .obs-box p { margin: 0; font-size: 14px; }
+          .footer { background: #f4f4f7; padding: 16px 24px; text-align: center; font-size: 12px; color: #888; }
+        </style>
+      </head>
+      <body>
+        <div class="wrapper">
+          <div class="header">
+            <h1>❌ Solicitud Rechazada — Stimi</h1>
+          </div>
+          <div class="body">
+            <p>Hola <strong>${userName || 'Usuario'}</strong>,</p>
+            <p>Te informamos que tu solicitud de registro en la plataforma <strong>Stimi (SENA)</strong> no ha sido aprobada por la Coordinación Académica.</p>
+            <div class="obs-box">
+              <p><strong>Motivo / Observación de rechazo:</strong></p>
+              <p style="margin-top: 8px;">${reason || 'No se especificó un motivo.'}</p>
+            </div>
+            <p>Si consideras que se trata de un error o deseas subsanar los datos, por favor comunícate con tu Coordinador Académico o realiza nuevamente tu registro con la información correcta.</p>
+            <p>Saludos cordiales,<br/>Equipo de Coordinación — Stimi SENA</p>
+          </div>
+          <div class="footer">
+            Este es un correo automático, por favor no respondas a este mensaje.
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    try {
+      await this.transporter.sendMail({
+        from: `"${fromName}" <${fromUser}>`,
+        to,
+        subject: '❌ Solicitud de cuenta no aprobada — Stimi SENA',
+        html,
+      });
+      this.logger.log(`Account rejection email sent successfully to ${to}`);
+    } catch (error: any) {
+      this.logger.error(
+        `Error sending account rejection email to ${to}: ${error?.message || error}`,
+        error?.stack,
+      );
+      // No relanzamos para evitar que falle la transacción principal si falla el servidor de correo
+    }
+  }
 }
 

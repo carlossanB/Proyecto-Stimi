@@ -44,6 +44,7 @@ import { CoordinadorModule } from './coordinador/coordinador.module';
             entities: [__dirname + '/**/*.entity{.ts,.js}'],
             migrations: [__dirname + '/migrations/*{.ts,.js}'],
             synchronize: sync,
+            migrationsRun: true,
           };
         }
 
@@ -54,6 +55,7 @@ import { CoordinadorModule } from './coordinador/coordinador.module';
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
           migrations: [__dirname + '/migrations/*{.ts,.js}'],
           synchronize: sync,
+          migrationsRun: true,
         };
       },
       inject: [ConfigService],

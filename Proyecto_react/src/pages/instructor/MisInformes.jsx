@@ -677,13 +677,13 @@ const handleDescartarBorrador = async (reportId) => {
               {step === 1 && (
                 <div className="space-y-4 animate-in slide-in-from-right-4 fade-in">
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1.5">{t('periodoActual.step1Title', 'Paso 1 de 3 — Selección de período')}</label>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5">{t('periodoActual.step1Title', 'Paso 1 de 3 — Selección de período')}</label>
                     <select 
                       value={selectedPeriod}
                       onChange={(e) => setSelectedPeriod(e.target.value)}
-                      className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#407754] focus:border-transparent bg-white shadow-sm appearance-none"
+                      className="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#407754] focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm appearance-none"
                     >
-                      <option value="" disabled>{t('misInformes.choosePeriodOption', 'Elige un período...')}</option>
+                      <option value="" disabled className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">{t('misInformes.choosePeriodOption', 'Elige un período...')}</option>
                       {Array.from(new Set([
                         ...(() => {
                           const list = [];
@@ -696,12 +696,12 @@ const handleDescartarBorrador = async (reportId) => {
                         })(),
                         ...periods.map(p => p.periodName)
                       ])).map(pName => (
-                        <option key={pName} value={pName}>{getTranslatedPeriodName(pName)}</option>
+                        <option key={pName} value={pName} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">{getTranslatedPeriodName(pName)}</option>
                       ))}
                     </select>
                   </div>
                   <div className="flex justify-end gap-3 mt-8">
-                    <button onClick={resetModal} className="px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">{t('common.cancel', 'Cancelar')}</button>
+                    <button onClick={resetModal} className="px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">{t('common.cancel', 'Cancelar')}</button>
                     <button 
                       onClick={() => setStep(2)}
                       disabled={!selectedPeriod}
@@ -716,32 +716,32 @@ const handleDescartarBorrador = async (reportId) => {
               {/* Step 2: Type Selection */}
               {step === 2 && (
                 <div className="space-y-4 animate-in slide-in-from-right-4 fade-in">
-                  <label className="block text-sm font-bold text-gray-700 mb-3">{t('periodoActual.step2Title', 'Paso 2 de 3 — Tipo de informe')}</label>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-3">{t('periodoActual.step2Title', 'Paso 2 de 3 — Tipo de informe')}</label>
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       onClick={() => setSelectedType('GC')}
                       className={`text-left p-4 rounded-xl border-2 transition-all ${
-                        selectedType === 'GC' ? 'border-blue-500 bg-blue-50/50' : 'border-gray-100 hover:border-gray-200 bg-white'
+                        selectedType === 'GC' ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/40' : 'border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600 bg-white dark:bg-gray-800'
                       }`}
                     >
-                      <FiFileText className={`w-6 h-6 mb-2 ${selectedType === 'GC' ? 'text-blue-600' : 'text-gray-400'}`} />
-                      <h4 className={`text-sm font-bold ${selectedType === 'GC' ? 'text-blue-900' : 'text-gray-900'}`}>{t('periodoActual.reportGc', 'Informe GC')}</h4>
-                      <p className={`text-xs mt-1 ${selectedType === 'GC' ? 'text-blue-700' : 'text-gray-500'}`}>{t('periodoActual.gcDesc', 'Gestión Contractual')}</p>
+                      <FiFileText className={`w-6 h-6 mb-2 ${selectedType === 'GC' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'}`} />
+                      <h4 className={`text-sm font-bold ${selectedType === 'GC' ? 'text-blue-900 dark:text-blue-200' : 'text-gray-900 dark:text-gray-100'}`}>{t('periodoActual.reportGc', 'Informe GC')}</h4>
+                      <p className={`text-xs mt-1 ${selectedType === 'GC' ? 'text-blue-700 dark:text-blue-300' : 'text-gray-500 dark:text-gray-400'}`}>{t('periodoActual.gcDesc', 'Gestión Contractual')}</p>
                     </button>
                     
                     <button
                       onClick={() => setSelectedType('GF')}
                       className={`text-left p-4 rounded-xl border-2 transition-all ${
-                        selectedType === 'GF' ? 'border-emerald-500 bg-emerald-50/50' : 'border-gray-100 hover:border-gray-200 bg-white'
+                        selectedType === 'GF' ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/40' : 'border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600 bg-white dark:bg-gray-800'
                       }`}
                     >
-                      <FiFileText className={`w-6 h-6 mb-2 ${selectedType === 'GF' ? 'text-emerald-600' : 'text-gray-400'}`} />
-                      <h4 className={`text-sm font-bold ${selectedType === 'GF' ? 'text-emerald-900' : 'text-gray-900'}`}>{t('periodoActual.reportGf', 'Informe GF')}</h4>
-                      <p className={`text-xs mt-1 ${selectedType === 'GF' ? 'text-emerald-700' : 'text-gray-500'}`}>{t('periodoActual.gfDesc', 'Gestión Financiera')}</p>
+                      <FiFileText className={`w-6 h-6 mb-2 ${selectedType === 'GF' ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400'}`} />
+                      <h4 className={`text-sm font-bold ${selectedType === 'GF' ? 'text-emerald-900 dark:text-emerald-200' : 'text-gray-900 dark:text-gray-100'}`}>{t('periodoActual.reportGf', 'Informe GF')}</h4>
+                      <p className={`text-xs mt-1 ${selectedType === 'GF' ? 'text-emerald-700 dark:text-emerald-300' : 'text-gray-500 dark:text-gray-400'}`}>{t('periodoActual.gfDesc', 'Gestión Financiera')}</p>
                     </button>
                   </div>
                   <div className="flex justify-between mt-8">
-                    <button onClick={() => setStep(1)} className="px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors flex items-center gap-1">
+                    <button onClick={() => setStep(1)} className="px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors flex items-center gap-1">
                       <FiArrowLeft className="w-4 h-4" /> {t('periodoActual.back', 'Atrás')}
                     </button>
                     <button 
@@ -758,17 +758,17 @@ const handleDescartarBorrador = async (reportId) => {
               {/* Step 3: File Upload */}
               {step === 3 && (
                 <div className="space-y-5 animate-in slide-in-from-right-4 fade-in">
-                  <div className="bg-gray-50 p-3 rounded-xl flex items-center justify-between border border-gray-100">
+                  <div className="bg-gray-50 dark:bg-gray-900/60 p-3 rounded-xl flex items-center justify-between border border-gray-100 dark:border-gray-700">
                     <div className="text-sm">
-                      <span className="text-gray-500">{t('periodoActual.period', 'Período:')}</span> <strong className="text-gray-900">{selectedPeriod}</strong>
-                      <span className="mx-2 text-gray-300">|</span>
-                      <span className="text-gray-500">{t('periodoActual.type', 'Tipo:')}</span> <strong className="text-gray-900">{t('periodoActual.reportTypePrefix', 'Informe')} {selectedType}</strong>
+                      <span className="text-gray-500 dark:text-gray-400">{t('periodoActual.period', 'Período:')}</span> <strong className="text-gray-900 dark:text-gray-100">{selectedPeriod}</strong>
+                      <span className="mx-2 text-gray-300 dark:text-gray-600">|</span>
+                      <span className="text-gray-500 dark:text-gray-400">{t('periodoActual.type', 'Tipo:')}</span> <strong className="text-gray-900 dark:text-gray-100">{t('periodoActual.reportTypePrefix', 'Informe')} {selectedType}</strong>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1.5">{t('periodoActual.step3Title', 'Paso 3 de 3 — Adjuntar archivo')}</label>
-                    <p className="text-xs text-gray-500 mb-3">
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5">{t('periodoActual.step3Title', 'Paso 3 de 3 — Adjuntar archivo')}</label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
                       {selectedType === 'GC' ? t('periodoActual.formatGc', 'Formato GTH-F-062 V10 — Gestión Contractual') : t('periodoActual.formatGf', 'Gestión Financiera (Soporte)')}
                     </p>
                     
@@ -785,7 +785,7 @@ const handleDescartarBorrador = async (reportId) => {
                       onDrop={handleDrop}
                       onClick={() => fileInputRef.current?.click()}
                       className={`border-2 border-dashed rounded-2xl p-8 text-center transition-colors cursor-pointer group ${
-                        selectedFile ? 'border-[#407754] bg-green-50/30' : 'border-gray-300 hover:bg-gray-50'
+                        selectedFile ? 'border-[#407754] bg-green-50/30 dark:bg-green-950/20' : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50'
                       }`}
                     >
                       {selectedFile ? (
@@ -793,29 +793,29 @@ const handleDescartarBorrador = async (reportId) => {
                           <div className="bg-[#407754] w-12 h-12 rounded-full flex items-center justify-center mb-3">
                             <FiCheckCircle className="w-6 h-6 text-white" />
                           </div>
-                          <p className="text-sm font-bold text-gray-900 truncate max-w-full px-4">{selectedFile.name}</p>
-                          <p className="text-xs text-[#407754] mt-1 font-semibold">{(selectedFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+                          <p className="text-sm font-bold text-gray-900 dark:text-gray-100 truncate max-w-full px-4">{selectedFile.name}</p>
+                          <p className="text-xs text-[#407754] dark:text-emerald-400 mt-1 font-semibold">{(selectedFile.size / (1024 * 1024)).toFixed(2)} MB</p>
                           <button 
                             onClick={(e) => { e.stopPropagation(); setSelectedFile(null); }}
-                            className="mt-3 text-xs text-gray-500 hover:text-red-500 transition-colors font-medium hover:underline"
+                            className="mt-3 text-xs text-gray-500 dark:text-gray-400 hover:text-red-500 transition-colors font-medium hover:underline"
                           >
                             {t('periodoActual.removeAndSelectOther', 'Quitar y seleccionar otro')}
                           </button>
                         </div>
                       ) : (
                         <div>
-                          <div className="bg-blue-50 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                            <FiUploadCloud className="w-6 h-6 text-blue-500" />
+                          <div className="bg-blue-50 dark:bg-blue-950/40 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                            <FiUploadCloud className="w-6 h-6 text-blue-500 dark:text-blue-400" />
                           </div>
-                          <p className="text-sm font-bold text-gray-900">{t('periodoActual.dragDropText', 'Arrastra tu archivo aquí o haz clic para seleccionarlo')}</p>
-                          <p className="text-xs text-gray-500 mt-1">{t('periodoActual.pdfLimitText', 'Solo archivos PDF · Máximo 10 MB')}</p>
+                          <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{t('periodoActual.dragDropText', 'Arrastra tu archivo aquí o haz clic para seleccionarlo')}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('periodoActual.pdfLimitText', 'Solo archivos PDF · Máximo 10 MB')}</p>
                         </div>
                       )}
                     </div>
                   </div>
 
                   <div className="flex justify-between mt-8">
-                    <button onClick={() => setStep(2)} className="px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors flex items-center gap-1" disabled={isUploading}>
+                    <button onClick={() => setStep(2)} className="px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors flex items-center gap-1" disabled={isUploading}>
                       <FiArrowLeft className="w-4 h-4" /> {t('periodoActual.back', 'Atrás')}
                     </button>
                     <button 
@@ -842,17 +842,17 @@ const handleDescartarBorrador = async (reportId) => {
               {/* Step 4: Success */}
               {step === 4 && (
                 <div className="text-center py-6 animate-in zoom-in-95 fade-in">
-                  <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <FiCheckCircle className="w-8 h-8 text-green-600" />
+                  <div className="bg-green-100 dark:bg-green-950/40 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FiCheckCircle className="w-8 h-8 text-green-600 dark:text-emerald-400" />
                   </div>
-                  <h3 className="text-xl font-extrabold text-gray-900 mb-2">{t('periodoActual.uploadSuccessTitle', '¡Archivo cargado exitosamente!')}</h3>
-                  <p className="text-sm text-gray-600 max-w-sm mx-auto">
-                    {t('periodoActual.uploadSuccessDescPrefix', 'El informe')} <strong>{selectedType}</strong> {t('periodoActual.uploadSuccessDescMiddle', 'se ha guardado como')} <span className="font-semibold text-amber-600">{t('periodoActual.status.draft', 'Borrador')}</span> {t('periodoActual.uploadSuccessDescSuffix', 'en el período de')} <strong>{selectedPeriod}</strong>.
+                  <h3 className="text-xl font-extrabold text-gray-900 dark:text-gray-100 mb-2">{t('periodoActual.uploadSuccessTitle', '¡Archivo cargado exitosamente!')}</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 max-w-sm mx-auto">
+                    {t('periodoActual.uploadSuccessDescPrefix', 'El informe')} <strong>{selectedType}</strong> {t('periodoActual.uploadSuccessDescMiddle', 'se ha guardado como')} <span className="font-semibold text-amber-600 dark:text-amber-400">{t('periodoActual.status.draft', 'Borrador')}</span> {t('periodoActual.uploadSuccessDescSuffix', 'en el período de')} <strong>{selectedPeriod}</strong>.
                   </p>
                   
                   <button 
                     onClick={resetModal}
-                    className="mt-8 w-full py-3 bg-gray-900 hover:bg-black text-white text-sm font-bold rounded-xl shadow-sm transition-colors"
+                    className="mt-8 w-full py-3 bg-gray-900 hover:bg-black dark:bg-gray-700 dark:hover:bg-gray-600 text-white text-sm font-bold rounded-xl shadow-sm transition-colors"
                   >
                     {t('periodoActual.done', 'Listo')}
                   </button>

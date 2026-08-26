@@ -95,7 +95,7 @@ export default function Dashboard() {
           icon={FiUsers}
           title={t('coordinatorDashboard.totalInstructors', 'Total Instructores')}
           value={totalInstructores}
-          subtext={t('coordinatorDashboard.activeApprentices', '{{count}} aprendices activos', { count: totalAprendices })}
+          subtext={t('coordinatorDashboard.activeApprentices', '{{count}} instructores activos', { count: totalAprendices })}
           iconBgClass="bg-blue-50 dark:bg-blue-950/40"
           iconColorClass="text-blue-500 dark:text-blue-400"
         />

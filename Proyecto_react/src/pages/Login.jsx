@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { useTheme } from '../hooks/useTheme';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { FiEye, FiEyeOff, FiMoon, FiSun } from 'react-icons/fi';
+import { FiEye, FiEyeOff } from 'react-icons/fi';
 import fondoCampus from '../assets/Fondo.jpg.jpeg';
 import logoSena from '../assets/logo-sena.png';
 
 export default function Login() {
   const { login } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -83,15 +81,6 @@ export default function Login() {
     >
       {/* Light overlay — lets the campus photo show through */}
       <div className="absolute inset-0 bg-black/25 z-0"></div>
-
-      {/* Theme Toggle Button */}
-      <button
-        onClick={toggleTheme}
-        className="absolute top-6 right-6 p-3 text-white hover:bg-white/10 rounded-full transition-all duration-200 shadow-sm border border-white/10 bg-black/20 backdrop-blur-md z-10 cursor-pointer"
-        title={t('login.toggleTheme', 'Cambiar tema')}
-      >
-        {theme === 'light' ? <FiMoon className="w-5 h-5" /> : <FiSun className="w-5 h-5" />}
-      </button>
 
       {/* Glassmorphism card — translucent so campus greenery shows through */}
       <div className="relative z-10 bg-white/10 backdrop-blur-md border border-white/15 p-8 rounded-3xl shadow-2xl max-w-md w-full transition-all duration-300">

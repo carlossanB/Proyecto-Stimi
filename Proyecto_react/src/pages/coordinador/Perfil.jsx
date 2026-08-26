@@ -21,6 +21,8 @@ export default function PerfilCoordinador() {
   const [email, setEmail] = useState('');
   const [tipoDocumento, setTipoDocumento] = useState('CC');
   const [numeroDocumento, setNumeroDocumento] = useState('');
+  const [regional, setRegional] = useState('');
+  const [sedeCentro, setSedeCentro] = useState('');
 
   // Sync state from authenticated user or state editMode
   useEffect(() => {
@@ -29,6 +31,8 @@ export default function PerfilCoordinador() {
       setEmail(user.email || user.correo || '');
       setTipoDocumento(user.tipo_documento || 'CC');
       setNumeroDocumento(user.documento || user.numero_documento || '');
+      setRegional(user.regional || '');
+      setSedeCentro(user.sede_centro || user.sedeCentro || '');
     }
   }, [user]);
 
@@ -59,6 +63,8 @@ export default function PerfilCoordinador() {
         email: email.trim(),
         tipoDocumento,
         numeroDocumento: numeroDocumento.trim(),
+        regional: regional.trim(),
+        sedeCentro: sedeCentro.trim(),
       };
 
       await api.patch(`/personas/${user.id_usuario}`, payload);
@@ -71,6 +77,9 @@ export default function PerfilCoordinador() {
         tipo_documento: payload.tipoDocumento,
         documento: payload.numeroDocumento,
         numero_documento: payload.numeroDocumento,
+        regional: payload.regional,
+        sede_centro: payload.sedeCentro,
+        sedeCentro: payload.sedeCentro,
       });
 
       toast.success(t('perfil.alerts.profileSuccess', '¡Perfil actualizado exitosamente!'), { id: toastId });
@@ -90,6 +99,8 @@ export default function PerfilCoordinador() {
       setEmail(user.email || user.correo || '');
       setTipoDocumento(user.tipo_documento || 'CC');
       setNumeroDocumento(user.documento || user.numero_documento || '');
+      setRegional(user.regional || '');
+      setSedeCentro(user.sede_centro || user.sedeCentro || '');
     }
     setIsEditing(false);
   };
@@ -301,17 +312,42 @@ export default function PerfilCoordinador() {
 
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('perfil.centerSede', 'Centro / Sede')}</label>
-                <div className="flex flex-col justify-center bg-gray-50 dark:bg-gray-700/30 px-4 py-2.5 rounded-xl border border-gray-100 dark:border-gray-700 min-h-[46px]">
-                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 leading-tight">{t('common.coordinacionCentro', 'Centro de Servicios y Gestión Empresarial')}</span>
-                </div>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={sedeCentro}
+                    onChange={(e) => setSedeCentro(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#407754] focus:bg-white dark:focus:bg-gray-800"
+                  />
+                ) : (
+                  <div className="flex flex-col justify-center bg-gray-50 dark:bg-gray-700/30 px-4 py-2.5 rounded-xl border border-gray-100 dark:border-gray-700 min-h-[46px]">
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 leading-tight">
+                      {sedeCentro || t('common.coordinacionCentro', 'Centro de Servicios y Gestión Empresarial')}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('common.regional', 'Regional')}</label>
-                <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-700/30 px-4 py-3 rounded-xl border border-gray-100 dark:border-gray-700">
-                  <FiMapPin className="text-gray-400 dark:text-gray-500 shrink-0" />
-                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('common.coordinacionRegional', 'Regional Antioquia')}</span>
-                </div>
+                {isEditing ? (
+                  <div className="relative">
+                    <FiMapPin className="text-gray-400 dark:text-gray-500 absolute left-4 top-3.5 shrink-0" />
+                    <input
+                      type="text"
+                      value={regional}
+                      onChange={(e) => setRegional(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#407754] focus:bg-white dark:focus:bg-gray-800"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-700/30 px-4 py-3 rounded-xl border border-gray-100 dark:border-gray-700">
+                    <FiMapPin className="text-gray-400 dark:text-gray-500 shrink-0" />
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                      {regional || t('common.coordinacionRegional', 'Regional Antioquia')}
+                    </span>
+                  </div>
+                )}
               </div>
 
             </div>

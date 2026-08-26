@@ -18,6 +18,8 @@ export default function Registro() {
     numeroDocumento: '',
     password: '',
     confirmPassword: '',
+    regional: '',
+    sedeCentro: '',
     aceptaTerminos: false
   });
   const [loading, setLoading] = useState(false);
@@ -87,6 +89,8 @@ export default function Registro() {
         numeroDocumento: formData.numeroDocumento,
         contrasena: formData.password,
         confirmarContrasena: formData.confirmPassword,
+        regional: formData.regional || undefined,
+        sedeCentro: formData.sedeCentro || undefined,
         aceptaTerminos: formData.aceptaTerminos
       };
 
@@ -282,17 +286,36 @@ export default function Registro() {
             </div>
           </div>
 
-          {/* Regional & Centro Info Block */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-xs space-y-1">
-            <div className="flex justify-between">
-              <span className="text-gray-300">Regional:</span>
-              <span className="font-semibold text-white">{t('common.regional', 'Huila regional')}</span>
+          {/* Regional & Sede/Centro (editables) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-bold text-white block">
+                {t('registro.regional', 'Regional')}
+              </label>
+              <input
+                type="text"
+                name="regional"
+                placeholder="Ej: Huila"
+                value={formData.regional}
+                onChange={handleChange}
+                disabled={loading}
+                className="w-full px-4 py-3 rounded-2xl bg-white/10 text-white placeholder-gray-400 border border-white/20 focus:border-[#407754] focus:outline-none focus:ring-4 focus:ring-[#407754]/30 text-sm"
+              />
             </div>
-            <div className="flex justify-between text-right mt-1">
-              <span className="text-gray-300">Centro de Formación:</span>
-              <span className="font-semibold text-white max-w-[200px] truncate" title="Centro de Gestión y Desarrollo Sostenible Surcolombiano">
-                {t('common.centro', 'Centro de Gestión y Desarrollo Sostenible Surcolombiano')}
-              </span>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-bold text-white block">
+                {t('registro.sedeCentro', 'Sede / Centro')}
+              </label>
+              <input
+                type="text"
+                name="sedeCentro"
+                placeholder="Ej: Centro de Gestión y Desarrollo..."
+                value={formData.sedeCentro}
+                onChange={handleChange}
+                disabled={loading}
+                className="w-full px-4 py-3 rounded-2xl bg-white/10 text-white placeholder-gray-400 border border-white/20 focus:border-[#407754] focus:outline-none focus:ring-4 focus:ring-[#407754]/30 text-sm"
+              />
             </div>
           </div>
 

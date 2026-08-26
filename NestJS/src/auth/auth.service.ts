@@ -61,6 +61,8 @@ export class AuthService {
         rol: user.rol?.nombre_rol ?? 'instructor',
         area: user.area?.nombre_area ?? 'Sin Área Asignada',
         firma_digital_ruta: user.firma_digital_ruta || null,
+        regional: user.regional ?? null,
+        sede_centro: user.sede_centro ?? null,
       },
     };
   }

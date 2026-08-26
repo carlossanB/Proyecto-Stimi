@@ -73,26 +73,26 @@ function ModalConfirmacion({ archivo, onConfirmar, onCancelar }) {
 
           {/* Período */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1.5">
               Período del informe
             </label>
             <div className="flex gap-2">
               <select
                 value={mes}
                 onChange={e => setMes(e.target.value)}
-                className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                className="flex-1 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
               >
                 {MESES.map(m => (
-                  <option key={m} value={m}>{m}</option>
+                  <option key={m} value={m} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">{m}</option>
                 ))}
               </select>
               <select
                 value={anio}
                 onChange={e => setAnio(e.target.value)}
-                className="w-28 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                className="w-28 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
               >
                 {[anioActual - 1, anioActual, anioActual + 1].map(a => (
-                  <option key={a} value={String(a)}>{a}</option>
+                  <option key={a} value={String(a)} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">{a}</option>
                 ))}
               </select>
             </div>

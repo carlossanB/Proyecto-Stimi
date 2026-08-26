@@ -426,7 +426,7 @@
     "title": "Panel de Coordinación Académica",
     "subtitle": "Centro de Servicios y Gestión Empresarial | Período de control activo",
     "totalInstructors": "Total Instructores",
-    "activeApprentices": "{{count}} aprendices activos",
+    "activeApprentices": "{{count}} instructores activos",
     "pendingReview": "Pendientes Revisión",
     "reportsReceived": "Informes recibidos",
     "validatedReports": "Informes Validados",

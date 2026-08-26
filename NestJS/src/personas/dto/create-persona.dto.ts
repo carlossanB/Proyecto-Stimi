@@ -49,4 +49,18 @@ export class CreatePersonaDto {
   @IsOptional()
   @IsString()
   confirmarContrasena?: string;
+
+  @ApiProperty({ description: 'Regional SENA a la que pertenece el usuario', required: false, example: 'Huila' })
+  @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @MaxLength(150)
+  regional?: string;
+
+  @ApiProperty({ description: 'Sede o Centro de Formación', required: false, example: 'Centro de Gestión y Desarrollo Sostenible Surcolombiano' })
+  @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @MaxLength(255)
+  sedeCentro?: string;
 }

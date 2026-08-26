@@ -38,23 +38,23 @@ function ModalConfirmacion({ archivo, onConfirmar, onCancelar, periodoDefault })
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xs p-5 animate-in fade-in zoom-in-95">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-xs p-5 animate-in fade-in zoom-in-95">
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-9 h-9 bg-green-100 rounded-xl flex items-center justify-center shrink-0">
-            <FiFileText className="w-5 h-5 text-green-600" />
+          <div className="w-9 h-9 bg-green-100 dark:bg-green-950/40 rounded-xl flex items-center justify-center shrink-0">
+            <FiFileText className="w-5 h-5 text-green-600 dark:text-emerald-400" />
           </div>
           <div className="overflow-hidden">
-            <h3 className="font-bold text-sm text-gray-900 leading-tight">Analizar informe</h3>
-            <p className="text-[11px] text-gray-500 truncate">{archivo.name}</p>
+            <h3 className="font-bold text-sm text-gray-900 dark:text-gray-100 leading-tight">Analizar informe</h3>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{archivo.name}</p>
           </div>
-          <button onClick={onCancelar} className="ml-auto text-gray-400 hover:text-gray-600">
+          <button onClick={onCancelar} className="ml-auto text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
             <FiX className="w-4 h-4" />
           </button>
         </div>
 
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">Tipo de informe</label>
+            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Tipo de informe</label>
             <div className="flex gap-2">
               {['GC', 'GF'].map(t => (
                 <button
@@ -63,7 +63,7 @@ function ModalConfirmacion({ archivo, onConfirmar, onCancelar, periodoDefault })
                   className={`flex-1 py-1.5 rounded-lg text-xs font-bold border transition-all ${
                     tipo === t
                       ? 'bg-[#407754] border-[#407754] text-white shadow-xs'
-                      : 'border-gray-200 text-gray-600 hover:border-green-300'
+                      : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-green-300'
                   }`}
                 >
                   {t}
@@ -73,21 +73,21 @@ function ModalConfirmacion({ archivo, onConfirmar, onCancelar, periodoDefault })
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">Período</label>
+            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Período</label>
             <div className="flex gap-2">
               <select
                 value={mes}
                 onChange={e => setMes(e.target.value)}
-                className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#407754]"
+                className="flex-1 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#407754] bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               >
-                {MESES.map(m => <option key={m} value={m}>{m}</option>)}
+                {MESES.map(m => <option key={m} value={m} className="bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">{m}</option>)}
               </select>
               <select
                 value={anio}
                 onChange={e => setAnio(e.target.value)}
-                className="w-20 border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#407754]"
+                className="w-20 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#407754] bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               >
-                {[anioActual - 1, anioActual, anioActual + 1].map(a => <option key={a} value={String(a)}>{a}</option>)}
+                {[anioActual - 1, anioActual, anioActual + 1].map(a => <option key={a} value={String(a)} className="bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">{a}</option>)}
               </select>
             </div>
           </div>
@@ -96,7 +96,7 @@ function ModalConfirmacion({ archivo, onConfirmar, onCancelar, periodoDefault })
         <div className="flex gap-2 mt-4">
           <button
             onClick={onCancelar}
-            className="flex-1 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50"
+            className="flex-1 py-2 border border-gray-200 dark:border-gray-700 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
           >
             Cancelar
           </button>

@@ -63,6 +63,12 @@ export class Persona {
   @Column({ name: 'motivo_rechazo', type: 'varchar', length: 255, nullable: true })
   motivo_rechazo?: string;
 
+  @Column({ name: 'regional', type: 'varchar', length: 150, nullable: true })
+  regional?: string;
+
+  @Column({ name: 'sede_centro', type: 'varchar', length: 255, nullable: true })
+  sede_centro?: string;
+
   @Column({ name: 'reset_token', type: 'varchar', length: 255, nullable: true })
   reset_token?: string;
 

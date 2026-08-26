@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from 'react-i18next';
 import { reportesService } from '../../services/reportesService';
 import { instructoresService } from '../../services/instructoresService';
@@ -32,6 +33,8 @@ import PageContainer from '../../components/PageContainer';
 
 export default function Reportes() {
   const { t } = useTranslation();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
   const [instructores, setInstructores] = useState([]);
@@ -85,57 +88,111 @@ export default function Reportes() {
     toast.success(t('reportes.alerts.filtersApplied', 'Filtros aplicados con éxito'));
   };
 
-  // ── Exportación a Excel / CSV ────────────────────────────────────────────────
+  // ── Exportación a Excel (HTML Table estructurado altamente compatible) ─────────
   const exportToCSV = () => {
     if (!stats) return;
     setShowExportMenu(false);
 
-    const headers = ['ID Instructor', 'Nombre Instructor', 'Informes Validados', 'Informes Rechazados', 'Informes Pendientes', '% Cumplimiento'];
-    
-    const rows = (stats.cumplimientoPorInstructor || []).map(inst => {
+    const fecha = new Date().toLocaleString('es-CO');
+    const instRows = (stats.cumplimientoPorInstructor || []).map(inst => {
       const total = inst.aprobados + inst.rechazados + inst.pendientes;
       const pct = total > 0 ? Math.round((inst.aprobados / total) * 100) : 0;
-      return [
-        `"${inst.id}"`,
-        `"${inst.nombre.replace(/"/g, '""')}"`,
-        inst.aprobados,
-        inst.rechazados,
-        inst.pendientes,
-        `"${pct}%"`
-      ];
-    });
+      const barWidth = Math.round(pct * 0.5); // visual bar 0-50 chars
+      const barText = '█'.repeat(barWidth) + ' '.repeat(50 - barWidth);
+      return `
+        <tr>
+          <td style="border:1px solid #cbd5e1;padding:8px;font-size:11px;">${inst.nombre}</td>
+          <td style="border:1px solid #cbd5e1;padding:8px;font-size:11px;color:#407754;font-weight:bold;background-color:#f0fdf4;text-align:center;">${inst.aprobados}</td>
+          <td style="border:1px solid #cbd5e1;padding:8px;font-size:11px;color:#dc2626;font-weight:bold;background-color:#fff1f2;text-align:center;">${inst.rechazados}</td>
+          <td style="border:1px solid #cbd5e1;padding:8px;font-size:11px;color:#d97706;font-weight:bold;background-color:#fffbeb;text-align:center;">${inst.pendientes}</td>
+          <td style="border:1px solid #cbd5e1;padding:8px;font-size:11px;color:#7c3aed;font-weight:bold;background-color:#f5f3ff;text-align:center;">${pct}%</td>
+          <td style="border:1px solid #cbd5e1;padding:8px;font-size:10px;font-family:monospace;color:#39A900;background-color:#f9fafb;white-space:pre;">${barText} ${pct}%</td>
+        </tr>`;
+    }).join('');
 
-    const metadata = [
-      ['SENA - SISTEMA DE TRAZABILIDAD MENSUAL DE INFORMES (STIMI)'],
-      ['REPORTE Y ESTADÍSTICAS GENERALES DE CUMPLIMIENTO'],
-      [`Fecha de Generación: ${new Date().toLocaleString('es-CO')}`],
-      [`Filtros Aplicados: Instructor=${selectedInst}, Mes=${selectedMes}, Área=${selectedArea}`],
-      [''],
-      ['RESUMEN GENERAL'],
-      ['Total Informes', stats.totalInformes],
-      ['Validados / Aprobados', stats.aprobados],
-      ['Rechazados / Devueltos', stats.rechazados],
-      ['Pendientes', stats.pendientes],
-      ['Tasa de Cumplimiento General', `${stats.tasaCumplimiento}%`],
-      [''],
-      ['DESGLOSE POR INSTRUCTOR'],
-      headers,
-      ...rows
-    ];
+    const htmlContent = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8"/>
+<title>Reporte STIMI</title>
+<!--[if gte mso 9]>
+<xml>
+<x:ExcelWorkbook>
+<x:ExcelWorksheets>
+<x:ExcelWorksheet>
+<x:Name>Reporte STIMI</x:Name>
+<x:WorksheetOptions>
+<x:DisplayGridlines/>
+</x:WorksheetOptions>
+</x:ExcelWorksheet>
+</x:ExcelWorksheets>
+</x:ExcelWorkbook>
+</xml>
+<![endif]-->
+</head>
+<body>
+<table style="border-collapse:collapse;font-family:'Segoe UI',Arial,sans-serif;width:100%;">
+  <tr>
+    <th colspan="6" style="background-color:#39A900;color:#ffffff;font-size:16px;font-weight:bold;padding:12px;text-align:center;border:1px solid #2d7a00;">SENA · SISTEMA DE TRAZABILIDAD MENSUAL DE INFORMES (STIMI)</th>
+  </tr>
+  <tr>
+    <th colspan="6" style="background-color:#2d7a00;color:#ffffff;font-size:11px;font-weight:bold;padding:6px;text-align:center;border:1px solid #2d7a00;">REPORTE Y ESTADÍSTICAS GENERALES DE CUMPLIMIENTO</th>
+  </tr>
+  <tr>
+    <td colspan="6" style="background-color:#f3f4f6;color:#4b5563;font-size:9px;font-style:italic;padding:6px;border:1px solid #cbd5e1;">Fecha de Generación: ${fecha}   |   Filtros: Instructor=${selectedInst}  Mes=${selectedMes}  Área=${selectedArea}</td>
+  </tr>
+  <tr><td colspan="6" style="padding:4px;border:none;"></td></tr>
+  <tr>
+    <td colspan="6" style="background-color:#407754;color:#ffffff;font-weight:bold;font-size:11px;padding:6px;border:1px solid #335f43;">📊 RESUMEN GENERAL</td>
+  </tr>
+  <tr>
+    <td style="font-weight:bold;background-color:#ecfdf5;border:1px solid #cbd5e1;padding:8px;font-size:11px;">Total Informes</td>
+    <td style="font-weight:bold;color:#39A900;background-color:#f0fdf4;text-align:center;border:1px solid #cbd5e1;padding:8px;font-size:11px;">${stats.totalInformes}</td>
+    <td style="font-weight:bold;background-color:#ecfdf5;border:1px solid #cbd5e1;padding:8px;font-size:11px;">Validados</td>
+    <td style="font-weight:bold;color:#407754;background-color:#f0fdf4;text-align:center;border:1px solid #cbd5e1;padding:8px;font-size:11px;">${stats.aprobados}</td>
+    <td style="font-weight:bold;background-color:#ecfdf5;border:1px solid #cbd5e1;padding:8px;font-size:11px;">% Cumplimiento</td>
+    <td style="font-weight:bold;color:#7c3aed;background-color:#f5f3ff;text-align:center;border:1px solid #cbd5e1;padding:8px;font-size:11px;">${stats.tasaCumplimiento}%</td>
+  </tr>
+  <tr>
+    <td style="font-weight:bold;background-color:#ecfdf5;border:1px solid #cbd5e1;padding:8px;font-size:11px;">Rechazados</td>
+    <td style="font-weight:bold;color:#dc2626;background-color:#fff1f2;text-align:center;border:1px solid #cbd5e1;padding:8px;font-size:11px;">${stats.rechazados}</td>
+    <td style="font-weight:bold;background-color:#ecfdf5;border:1px solid #cbd5e1;padding:8px;font-size:11px;">Pendientes</td>
+    <td style="font-weight:bold;color:#d97706;background-color:#fffbeb;text-align:center;border:1px solid #cbd5e1;padding:8px;font-size:11px;">${stats.pendientes}</td>
+    <td colspan="2" style="border:1px solid #cbd5e1;"></td>
+  </tr>
+  <tr><td colspan="6" style="padding:4px;border:none;"></td></tr>
+  <tr>
+    <td colspan="6" style="background-color:#407754;color:#ffffff;font-weight:bold;font-size:11px;padding:6px;border:1px solid #335f43;">👤 DESGLOSE POR INSTRUCTOR</td>
+  </tr>
+  <tr>
+    <th style="background-color:#39A900;color:#ffffff;font-weight:bold;font-size:11px;padding:8px;border:1px solid #2d7a00;text-align:left;">Instructor</th>
+    <th style="background-color:#39A900;color:#ffffff;font-weight:bold;font-size:11px;padding:8px;border:1px solid #2d7a00;text-align:center;">Validados</th>
+    <th style="background-color:#39A900;color:#ffffff;font-weight:bold;font-size:11px;padding:8px;border:1px solid #2d7a00;text-align:center;">Rechazados</th>
+    <th style="background-color:#39A900;color:#ffffff;font-weight:bold;font-size:11px;padding:8px;border:1px solid #2d7a00;text-align:center;">Pendientes</th>
+    <th style="background-color:#39A900;color:#ffffff;font-weight:bold;font-size:11px;padding:8px;border:1px solid #2d7a00;text-align:center;">% Cump.</th>
+    <th style="background-color:#39A900;color:#ffffff;font-weight:bold;font-size:11px;padding:8px;border:1px solid #2d7a00;text-align:left;">Barra de Cumplimiento</th>
+  </tr>
+  ${instRows}
+  <tr><td colspan="6" style="padding:4px;border:none;"></td></tr>
+  <tr>
+    <td colspan="6" style="text-align:center;font-size:9px;color:#9ca3af;padding:12px;border:none;">Generado automáticamente por STIMI · Servicio Nacional de Aprendizaje SENA</td>
+  </tr>
+</table>
+</body>
+</html>`;
 
-    const csvContent = '\uFEFF' + metadata.map(e => e.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([htmlContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `Reporte_STIMI_SENA_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `Reporte_STIMI_SENA_${new Date().toISOString().slice(0, 10)}.xls`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success(t('reportes.alerts.csvExported', '📊 Reporte exportado a Excel / CSV correctamente'));
+    URL.revokeObjectURL(url);
+    toast.success(t('reportes.alerts.csvExported', '📊 Reporte exportado a Excel correctamente'));
   };
 
-  // ── Exportación a PDF Oficial ────────────────────────────────────────────────
+  // ── Exportación a PDF Oficial con Gráficas SVG ──────────────────────────────
   const exportToPDF = () => {
     if (!stats) return;
     setShowExportMenu(false);
@@ -146,7 +203,10 @@ export default function Reportes() {
       return;
     }
 
-    const rowsHtml = (stats.cumplimientoPorInstructor || []).map(inst => {
+    const instData = stats.cumplimientoPorInstructor || [];
+
+    // ── Tabla de filas
+    const rowsHtml = instData.map(inst => {
       const total = inst.aprobados + inst.rechazados + inst.pendientes;
       const pct = total > 0 ? Math.round((inst.aprobados / total) * 100) : 0;
       return `
@@ -158,6 +218,52 @@ export default function Reportes() {
           <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: center; font-weight: bold;">${pct}%</td>
         </tr>
       `;
+    }).join('');
+
+    // ── Gráfica SVG de barras horizontales (cumplimiento por instructor)
+    const BAR_H = 22;
+    const BAR_GAP = 8;
+    const MAX_W = 320;
+    const svgBarH = instData.length * (BAR_H + BAR_GAP) + 20;
+    const svgBarBars = instData.map((inst, i) => {
+      const total = inst.aprobados + inst.rechazados + inst.pendientes;
+      const pct = total > 0 ? Math.round((inst.aprobados / total) * 100) : 0;
+      const wApr = total > 0 ? Math.round((inst.aprobados / total) * MAX_W) : 0;
+      const wRej = total > 0 ? Math.round((inst.rechazados / total) * MAX_W) : 0;
+      const wPen = total > 0 ? Math.round((inst.pendientes / total) * MAX_W) : 0;
+      const y = i * (BAR_H + BAR_GAP) + 10;
+      const label = inst.nombre.length > 22 ? inst.nombre.slice(0, 21) + '…' : inst.nombre;
+      return `
+        <text x="0" y="${y + 15}" font-size="9" fill="#374151">${label}</text>
+        <g transform="translate(0, ${y + 18})">
+          <rect x="0" y="0" width="${wApr}" height="${BAR_H - 4}" rx="3" fill="#39A900"/>
+          <rect x="${wApr}" y="0" width="${wRej}" height="${BAR_H - 4}" rx="3" fill="#ef4444"/>
+          <rect x="${wApr + wRej}" y="0" width="${wPen}" height="${BAR_H - 4}" rx="3" fill="#f59e0b"/>
+          <text x="${Math.min(wApr + wRej + wPen + 4, MAX_W - 5)}" y="${(BAR_H - 4) / 2 + 4}" font-size="9" fill="#374151" font-weight="bold">${pct}%</text>
+        </g>`;
+    }).join('');
+
+    // ── Gráfica SVG donut (distribución de estados)
+    const total = stats.totalInformes || 1;
+    const donutData = [
+      { value: stats.aprobados, color: '#39A900' },
+      { value: stats.rechazados, color: '#ef4444' },
+      { value: stats.pendientes, color: '#f59e0b' }
+    ];
+    const cx = 80; const cy = 80; const R = 60; const r = 38;
+    let startAngle = -Math.PI / 2;
+    const donutPaths = donutData.map(seg => {
+      const angle = (seg.value / total) * 2 * Math.PI || 0;
+      const endAngle = startAngle + angle;
+      const x1 = cx + R * Math.cos(startAngle); const y1 = cy + R * Math.sin(startAngle);
+      const x2 = cx + R * Math.cos(endAngle);   const y2 = cy + R * Math.sin(endAngle);
+      const xi1 = cx + r * Math.cos(endAngle);   const yi1 = cy + r * Math.sin(endAngle);
+      const xi2 = cx + r * Math.cos(startAngle); const yi2 = cy + r * Math.sin(startAngle);
+      const large = angle > Math.PI ? 1 : 0;
+      const d = angle < 0.01 ? '' :
+        `M ${x1} ${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2} L ${xi1} ${yi1} A ${r} ${r} 0 ${large} 0 ${xi2} ${yi2} Z`;
+      startAngle = endAngle;
+      return d ? `<path d="${d}" fill="${seg.color}" />` : '';
     }).join('');
 
     printWindow.document.write(`
@@ -176,9 +282,16 @@ export default function Reportes() {
           .stat-card { background: #f3f4f6; border-radius: 10px; padding: 12px; text-align: center; }
           .stat-title { font-size: 10px; font-weight: bold; color: #6b7280; text-transform: uppercase; }
           .stat-value { font-size: 22px; font-weight: bold; margin-top: 4px; }
+          .charts-row { display: flex; gap: 30px; margin-bottom: 28px; align-items: flex-start; }
+          .chart-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px; }
+          .chart-title { font-size: 11px; font-weight: bold; color: #374151; margin-bottom: 10px; }
+          .donut-legend { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+          .donut-item { display: flex; align-items: center; gap: 6px; font-size: 10px; }
+          .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
           table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
           th { background: #39A900; color: white; padding: 10px; text-align: left; }
           .footer { margin-top: 40px; border-top: 1px solid #e5e7eb; padding-top: 15px; text-align: center; font-size: 10px; color: #9ca3af; }
+          @media print { body { padding: 15px; } }
         </style>
       </head>
       <body>
@@ -189,7 +302,6 @@ export default function Reportes() {
           </div>
           <div style="text-align: right; font-size: 11px; color: #4b5563;">
             <div><strong>Fecha:</strong> ${new Date().toLocaleDateString('es-CO')}</div>
-            <div><strong>Sede:</strong> Regional Antioquia / Huila</div>
           </div>
         </div>
 
@@ -202,6 +314,36 @@ export default function Reportes() {
           <div class="stat-card"><div class="stat-title">Validados</div><div class="stat-value" style="color: #407754;">${stats.aprobados}</div></div>
           <div class="stat-card"><div class="stat-title">Rechazados</div><div class="stat-value" style="color: #ef4444;">${stats.rechazados}</div></div>
           <div class="stat-card"><div class="stat-title">% Cumplimiento</div><div class="stat-value" style="color: #7c3aed;">${stats.tasaCumplimiento}%</div></div>
+        </div>
+
+        <!-- Sección de gráficas -->
+        <div class="charts-row">
+          <!-- Barras por instructor -->
+          <div class="chart-box" style="flex: 1;">
+            <div class="chart-title">📊 Cumplimiento por Instructor</div>
+            <svg width="100%" viewBox="0 0 420 ${svgBarH}" xmlns="http://www.w3.org/2000/svg">
+              ${svgBarBars}
+            </svg>
+            <div style="display:flex;gap:12px;margin-top:8px;font-size:9px;">
+              <span><span style="color:#39A900;font-weight:bold;">█</span> Validados</span>
+              <span><span style="color:#ef4444;font-weight:bold;">█</span> Rechazados</span>
+              <span><span style="color:#f59e0b;font-weight:bold;">█</span> Pendientes</span>
+            </div>
+          </div>
+          <!-- Donut de distribución -->
+          <div class="chart-box" style="min-width:200px;">
+            <div class="chart-title">🥧 Distribución de Estados</div>
+            <svg width="160" height="160" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+              ${donutPaths}
+              <text x="${cx}" y="${cy + 5}" text-anchor="middle" font-size="13" font-weight="bold" fill="#374151">${stats.tasaCumplimiento}%</text>
+              <text x="${cx}" y="${cy + 17}" text-anchor="middle" font-size="8" fill="#9ca3af">cumplimiento</text>
+            </svg>
+            <div class="donut-legend">
+              <div class="donut-item"><span class="dot" style="background:#39A900"></span><strong>Validados:</strong>&nbsp;${stats.aprobados} (${Math.round((stats.aprobados/total)*100)||0}%)</div>
+              <div class="donut-item"><span class="dot" style="background:#ef4444"></span><strong>Rechazados:</strong>&nbsp;${stats.rechazados} (${Math.round((stats.rechazados/total)*100)||0}%)</div>
+              <div class="donut-item"><span class="dot" style="background:#f59e0b"></span><strong>Pendientes:</strong>&nbsp;${stats.pendientes} (${Math.round((stats.pendientes/total)*100)||0}%)</div>
+            </div>
+          </div>
         </div>
 
         <h3 style="font-size: 14px; font-weight: bold; margin-bottom: 10px;">Desglose de Cumplimiento por Instructor</h3>
@@ -225,9 +367,7 @@ export default function Reportes() {
         </div>
 
         <script>
-          window.onload = function() {
-            window.print();
-          };
+          window.onload = function() { window.print(); };
         </script>
       </body>
       </html>
@@ -433,9 +573,12 @@ export default function Reportes() {
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f3f4f6" />
                 <XAxis type="number" stroke="#9ca3af" fontSize={10} />
                 <YAxis dataKey="nombre" type="category" stroke="#9ca3af" fontSize={9} width={100} />
-                <Tooltip 
-                  contentStyle={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', fontSize: '11px' }} 
-                  cursor={{ fill: '#f9fafb' }}
+                <Tooltip
+                  contentStyle={isDark
+                    ? { background: '#1f2937', border: '1px solid #374151', borderRadius: '12px', fontSize: '11px', color: '#f9fafb' }
+                    : { background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', fontSize: '11px', color: '#111827' }}
+                  labelStyle={isDark ? { color: '#d1d5db' } : { color: '#374151' }}
+                  cursor={{ fill: isDark ? 'rgba(255,255,255,0.05)' : '#f9fafb' }}
                 />
                 <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
                 <Bar dataKey="aprobados" name="Validados" stackId="a" fill="#407754" radius={[0, 4, 4, 0]} />
@@ -471,8 +614,11 @@ export default function Reportes() {
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip 
-                      contentStyle={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', fontSize: '11px' }} 
+                    <Tooltip
+                      contentStyle={isDark
+                        ? { background: '#1f2937', border: '1px solid #374151', borderRadius: '12px', fontSize: '11px', color: '#f9fafb' }
+                        : { background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', fontSize: '11px', color: '#111827' }}
+                      labelStyle={isDark ? { color: '#d1d5db' } : { color: '#374151' }}
                     />
                   </PieChart>
                 </ResponsiveContainer>

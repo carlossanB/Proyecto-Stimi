@@ -5,12 +5,14 @@ import { Repository } from 'typeorm';
 import { Persona } from './entities/persona.entity';
 import { CreatePersonaDto } from './dto/create-persona.dto';
 import { UpdatePersonaDto } from './dto/update-persona.dto';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class PersonasService {
   constructor(
     @InjectRepository(Persona)
     private readonly personaRepository: Repository<Persona>,
+    private readonly mailService: MailService,
   ) {}
 
   async create(createPersonaDto: CreatePersonaDto) {
@@ -47,6 +49,8 @@ export class PersonasService {
       rol: null,
       area: null,
       estado_cuenta: 'pendiente',
+      regional: createPersonaDto.regional?.trim() || null,
+      sede_centro: createPersonaDto.sedeCentro?.trim() || null,
     });
 
     await this.personaRepository.save(persona);
@@ -90,6 +94,7 @@ export class PersonasService {
 
   async update(id: number, updatePersonaDto: UpdatePersonaDto) {
     const persona = await this.findOne(id);
+    const previousState = persona.estado_cuenta;
 
     if (updatePersonaDto.nombreCompleto !== undefined) {
       persona.nombre_completo = updatePersonaDto.nombreCompleto.trim();
@@ -124,8 +129,27 @@ export class PersonasService {
     if (updatePersonaDto.id_area !== undefined) {
       persona.area = updatePersonaDto.id_area ? ({ id_area: updatePersonaDto.id_area } as any) : null;
     }
+    if (updatePersonaDto.regional !== undefined) {
+      persona.regional = updatePersonaDto.regional?.trim() || undefined;
+    }
+    if (updatePersonaDto.sedeCentro !== undefined) {
+      persona.sede_centro = updatePersonaDto.sedeCentro?.trim() || undefined;
+    }
 
-    return this.personaRepository.save(persona);
+    const saved = await this.personaRepository.save(persona);
+
+    // Enviar correo si el estado de cuenta cambió a aprobado o rechazado
+    if (updatePersonaDto.estado_cuenta === 'aprobado' && previousState !== 'aprobado') {
+      this.mailService
+        .sendAccountApprovedEmail(saved.correo, saved.nombre_completo)
+        .catch(() => {});
+    } else if (updatePersonaDto.estado_cuenta === 'rechazado' && previousState !== 'rechazado') {
+      this.mailService
+        .sendAccountRejectedEmail(saved.correo, saved.nombre_completo, saved.motivo_rechazo)
+        .catch(() => {});
+    }
+
+    return saved;
   }
 
   remove(id: number) {

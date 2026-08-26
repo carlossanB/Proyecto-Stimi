@@ -1,4 +1,4 @@
-import React, { createContext, useState } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 
 export const AuthContext = createContext();
 
@@ -10,6 +10,54 @@ export function AuthProvider({ children }) {
     const savedUser = localStorage.getItem('stimi_user');
     return savedUser ? JSON.parse(savedUser) : null;
   });
+
+  // ── Hidratación de sesión activa ────────────────────────────────────────────
+  // Al montar la app, si hay sesión guardada, refresca los datos del usuario
+  // desde el backend para obtener campos actualizados (regional, sede_centro, etc.)
+  useEffect(() => {
+    const token = localStorage.getItem('stimi_token');
+    const savedUser = localStorage.getItem('stimi_user');
+    if (!token || !savedUser) return;
+
+    const parsed = JSON.parse(savedUser);
+    if (!parsed?.id_usuario) return;
+
+    api.get(`/personas/${parsed.id_usuario}`)
+      .then(({ data }) => {
+        const rolStr = typeof data.rol === 'object' && data.rol !== null
+          ? data.rol.nombre_rol
+          : data.rol;
+        const areaStr = typeof data.area === 'object' && data.area !== null
+          ? data.area.nombre_area
+          : data.area;
+
+        const freshUser = {
+          ...parsed, // mantiene cualquier campo extra ya en localStorage
+          id_usuario: data.id_usuario,
+          email: data.correo,
+          correo: data.correo,
+          nombreCompleto: data.nombre_completo,
+          rol: rolStr,
+          role: rolStr,
+          area: areaStr,
+          documento: data.numero_documento,
+          tipo_documento: data.tipo_documento,
+          numero_documento: data.numero_documento,
+          firma_digital_ruta: data.firma_digital_ruta || '',
+          regional: data.regional || null,
+          sede_centro: data.sede_centro || null,
+        };
+
+        setUser(freshUser);
+        localStorage.setItem('stimi_user', JSON.stringify(freshUser));
+      })
+      .catch(() => {
+        // Si falla (token expirado, sin red), no hacemos nada — el logout
+        // lo maneja el interceptor de Axios si es 401.
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // ────────────────────────────────────────────────────────────────────────────
 
   const login = async (email, password) => {
     try {
@@ -45,6 +93,8 @@ export function AuthProvider({ children }) {
         tipo_documento: apiUser.tipo_documento,
         numero_documento: apiUser.numero_documento,
         firma_digital_ruta: apiUser.firma_digital_ruta || '',
+        regional: apiUser.regional || null,
+        sede_centro: apiUser.sede_centro || null,
       };
 
       setUser(userData);

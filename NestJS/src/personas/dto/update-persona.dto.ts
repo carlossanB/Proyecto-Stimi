@@ -63,4 +63,16 @@ export class UpdatePersonaDto {
   @IsString()
   @MaxLength(255)
   carpeta_drive_url?: string;
+
+  @ApiProperty({ description: 'Regional SENA', required: false, example: 'Huila' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  regional?: string;
+
+  @ApiProperty({ description: 'Sede o Centro de Formación', required: false, example: 'Centro de Gestión y Desarrollo Sostenible Surcolombiano' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  sedeCentro?: string;
 }
