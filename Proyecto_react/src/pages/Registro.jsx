@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { FiInfo, FiX } from 'react-icons/fi';
+import { FiInfo, FiX, FiEye, FiEyeOff } from 'react-icons/fi';
 import api from '../services/api';
 import axios from 'axios';
 import fondoCampus from '../assets/Fondo.jpg.jpeg';
@@ -25,6 +25,8 @@ export default function Registro() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const validate = () => {
     const tempErrors = {};
@@ -245,19 +247,29 @@ export default function Registro() {
               <label className="text-sm font-bold text-white block">
                 {t('registro.password', 'Contraseña')}
               </label>
-              <input
-                type="password"
-                name="password"
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={handleChange}
-                disabled={loading}
-                className={`w-full px-4 py-3 rounded-2xl bg-white/10 text-white placeholder-gray-400 border ${
-                  errors.password 
-                    ? 'border-red-500' 
-                    : 'border-white/20 focus:border-[#407754]'
-                } focus:outline-none focus:ring-4 focus:ring-[#407754]/30 text-sm`}
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleChange}
+                  disabled={loading}
+                  className={`w-full px-4 pr-11 py-3 rounded-2xl bg-white/10 text-white placeholder-gray-400 border ${
+                    errors.password 
+                      ? 'border-red-500' 
+                      : 'border-white/20 focus:border-[#407754]'
+                  } focus:outline-none focus:ring-4 focus:ring-[#407754]/30 text-sm`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex="-1"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-200 cursor-pointer"
+                >
+                  {showPassword ? <FiEyeOff className="w-5 h-5" /> : <FiEye className="w-5 h-5" />}
+                </button>
+              </div>
               {errors.password && (
                 <p className="text-xs font-medium text-red-400 pt-1">{errors.password}</p>
               )}
@@ -267,19 +279,29 @@ export default function Registro() {
               <label className="text-sm font-bold text-white block">
                 {t('registro.confirmPassword', 'Confirmar Contraseña')}
               </label>
-              <input
-                type="password"
-                name="confirmPassword"
-                placeholder="••••••••"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                disabled={loading}
-                className={`w-full px-4 py-3 rounded-2xl bg-white/10 text-white placeholder-gray-400 border ${
-                  errors.confirmPassword 
-                    ? 'border-red-500' 
-                    : 'border-white/20 focus:border-[#407754]'
-                } focus:outline-none focus:ring-4 focus:ring-[#407754]/30 text-sm`}
-              />
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  name="confirmPassword"
+                  placeholder="••••••••"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  disabled={loading}
+                  className={`w-full px-4 pr-11 py-3 rounded-2xl bg-white/10 text-white placeholder-gray-400 border ${
+                    errors.confirmPassword 
+                      ? 'border-red-500' 
+                      : 'border-white/20 focus:border-[#407754]'
+                  } focus:outline-none focus:ring-4 focus:ring-[#407754]/30 text-sm`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  tabIndex="-1"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-200 cursor-pointer"
+                >
+                  {showConfirmPassword ? <FiEyeOff className="w-5 h-5" /> : <FiEye className="w-5 h-5" />}
+                </button>
+              </div>
               {errors.confirmPassword && (
                 <p className="text-xs font-medium text-red-400 pt-1">{errors.confirmPassword}</p>
               )}
