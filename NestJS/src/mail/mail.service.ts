@@ -229,6 +229,8 @@ export class MailService {
           .body p { font-size: 15px; line-height: 1.6; }
           .highlight-box { background: #f0fdf4; border-left: 4px solid #39A900; padding: 16px; margin: 24px 0; border-radius: 4px; }
           .highlight-box p { margin: 0; font-size: 14px; color: #166534; font-weight: bold; }
+          .btn-container { text-align: center; margin: 30px 0; }
+          .btn { background-color: #39A900; color: white !important; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; }
           .footer { background: #f4f4f7; padding: 16px 24px; text-align: center; font-size: 12px; color: #888; }
         </style>
       </head>
@@ -243,7 +245,11 @@ export class MailService {
             <div class="highlight-box">
               <p>Tu cuenta ya se encuentra activa y tienes acceso completo al sistema.</p>
             </div>
-            <p>Ya puedes iniciar sesión con tu correo electrónico o documento y tu contraseña registrada para comenzar a gestionar tus informes.</p>
+            <p>Ya puedes iniciar sesión utilizando tu correo electrónico o número de documento y la contraseña que registraste para comenzar a gestionar tus informes.</p>
+            <div class="btn-container">
+              <a href="https://app.stimi.online" class="btn">Iniciar Sesión en STIMI</a>
+            </div>
+            <p>También puedes acceder directamente a través de: <a href="https://app.stimi.online" style="color: #39A900; font-weight: bold; text-decoration: underline;">https://app.stimi.online</a></p>
             <p>Saludos cordiales,<br/>Equipo de Coordinación — Stimi SENA</p>
           </div>
           <div class="footer">
@@ -258,7 +264,7 @@ export class MailService {
       await this.transporter.sendMail({
         from: `"${fromName}" <${fromUser}>`,
         to,
-        subject: '✅ ¡Tu cuenta ha sido aprobada! — Stimi SENA',
+        subject: 'Tu cuenta en STIMI fue aprobada',
         html,
       });
       this.logger.log(`Account approval email sent successfully to ${to}`);
