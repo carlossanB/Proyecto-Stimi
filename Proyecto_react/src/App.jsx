@@ -30,7 +30,10 @@ import { useAuth } from './hooks/useAuth';
 
 function RootRedirect() {
   const { user, isAuthenticated } = useAuth();
-  if (!isAuthenticated) {
+  const token = localStorage.getItem('stimi_token');
+  const hasValidSession = isAuthenticated && !!token && !!user;
+
+  if (!hasValidSession) {
     return <Navigate to="/login" replace />;
   }
   return <Navigate to={`/${user.rol}`} replace />;
