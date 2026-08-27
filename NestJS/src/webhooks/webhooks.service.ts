@@ -68,79 +68,93 @@ export class WebhooksService {
     };
   }
 
-  // ── 2. Chat del Asistente IA (Frontend → NestJS → OpenAI) ───────────────────
+  // ── 2. Chat del Asistente IA Instructor (Frontend → NestJS → n8n) ─────────
   async procesarChatAsistente(
     dto: AsistenteChatDto,
     usuarioPayload: any,
   ): Promise<{ respuesta: string }> {
-    const openaiKey = this.configService.get<string>('OPENAI_API_KEY');
+    const usuarioId =
+      usuarioPayload?.id_usuario || usuarioPayload?.id || usuarioPayload?.sub;
 
-    if (!openaiKey) {
-      throw new InternalServerErrorException(
-        'El servicio de IA no está configurado. Contacta al administrador.',
-      );
+    if (!usuarioId) {
+      throw new BadRequestException('No se identificó al usuario autenticado.');
     }
 
-    const systemPrompt = `Eres el Asistente Virtual STIMI, un asistente especializado en apoyar a instructores del SENA en Colombia.
-Tu rol es ayudarles con:
-- Redactar y estructurar informes de seguimiento de contrato de aprendizaje (GC - Gestión de Compromiso).
-- Redactar informes de seguimiento a la formación (GF - Gestión de Formación).
-- Sugerir evidencias pedagógicas según el plan de formación.
-- Redactar obligaciones, actividades de aprendizaje y compromisos.
-- Dar orientaciones sobre el correcto seguimiento de aprendices.
-- Resolver dudas sobre los lineamientos institucionales del SENA.
+    const nombre =
+      usuarioPayload?.nombre_completo ||
+      usuarioPayload?.nombre ||
+      'Instructor';
 
-Instrucciones de comportamiento:
-- Responde siempre en español colombiano, de manera profesional pero cercana.
-- Cuando te pidan redactar texto para un informe, dale formato claro y listo para copiar.
-- Sé conciso en tus respuestas: máximo 3 párrafos, a menos que el usuario pida más detalle.
-- No inventes datos de aprendices ni cédulas. Usa placeholders como [NOMBRE DEL APRENDIZ] o [NÚMERO DE FICHA].
-- No hagas menciones a tecnologías externas ni recomiendes otras herramientas.`;
+    const webhookUrl =
+      this.configService.get<string>('N8N_WEBHOOK_CHAT_INSTRUCTOR') ||
+      'https://n8n.stimi.online/webhook/chat-instructor-web';
+    const webhookKey = this.configService.get<string>(
+      'N8N_WEBHOOK_CHAT_INSTRUCTOR_KEY',
+    );
 
-    const historialMsgs = (dto.historial ?? []).slice(-10).map((m) => ({
-      role: m.rol === 'user' ? 'user' : 'assistant',
-      content: m.contenido,
-    }));
-
-    const messages = [
-      { role: 'system', content: systemPrompt },
-      ...historialMsgs,
-      { role: 'user', content: dto.mensaje },
-    ];
+    const payload = {
+      usuarioId: Number(usuarioId),
+      mensaje: dto.mensaje,
+      nombre,
+    };
 
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 60000);
+
+      const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${openaiKey}`,
+          ...(webhookKey && {
+            'x-webhook-key': webhookKey,
+            Authorization: webhookKey,
+          }),
         },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages,
-          max_tokens: 600,
-          temperature: 0.7,
-        }),
+        body: JSON.stringify(payload),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeout);
+
       if (!response.ok) {
-        const err = await response.text();
-        this.logger.error(`Error de OpenAI: ${response.status} - ${err}`);
+        const errText = await response.text().catch(() => '');
+        this.logger.error(
+          `[ChatInstructor] n8n respondió con ${response.status}: ${errText.slice(0, 200)}`,
+        );
         throw new InternalServerErrorException(
-          'Error al comunicarse con el servicio de IA. Intenta de nuevo.',
+          'Error en el servicio de chat del instructor. Por favor, intenta de nuevo.',
         );
       }
 
       const data = (await response.json()) as any;
       const respuesta: string =
-        data?.choices?.[0]?.message?.content?.trim() ??
-        'No pude generar una respuesta. Por favor, intenta de nuevo.';
+        data?.respuesta ??
+        data?.mensaje ??
+        data?.output ??
+        data?.text ??
+        'El asistente no pudo generar una respuesta. Intenta de nuevo.';
 
+      this.logger.log(
+        `[ChatInstructor] Respuesta de n8n recibida para usuarioId=${usuarioId}`,
+      );
       return { respuesta };
     } catch (error: any) {
-      if (error instanceof InternalServerErrorException) throw error;
+      if (
+        error instanceof InternalServerErrorException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      if (error.name === 'AbortError') {
+        this.logger.error('[ChatInstructor] Timeout esperando respuesta de n8n');
+        throw new InternalServerErrorException(
+          'El asistente está tardando demasiado. Intenta de nuevo.',
+        );
+      }
+      this.logger.error(`[ChatInstructor] Error inesperado: ${error.message}`);
       throw new InternalServerErrorException(
-        'Error interno del asistente. Por favor, intenta más tarde.',
+        'No se pudo conectar con el asistente. Verifica tu conexión.',
       );
     }
   }

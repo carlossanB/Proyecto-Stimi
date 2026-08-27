@@ -64,9 +64,13 @@ export class InformesService {
 
   async findInstructorReports(idUsuario: number) {
     const tenantId = TenantContext.getTenantId();
+    // Query by instructor id usuario, allowing active tenant or default tenant
     const reports = await this.informeRepository.find({
-      where: { usuario: { id_usuario: idUsuario }, tenant_id: tenantId },
-      relations: { periodo: true, usuario: true, versiones: true },
+      where: [
+        { usuario: { id_usuario: idUsuario }, tenant_id: tenantId },
+        { usuario: { id_usuario: idUsuario }, tenant_id: 'default' },
+      ],
+      relations: { periodo: true, usuario: { area: true, rol: true }, versiones: true },
       order: {
         periodo: { anio: 'DESC', mes: 'DESC' },
         created_at: 'DESC',
@@ -93,7 +97,7 @@ export class InformesService {
       .leftJoinAndSelect('informe.usuario', 'usuario')
       .leftJoinAndSelect('usuario.area', 'area')
       .leftJoinAndSelect('informe.versiones', 'versiones')
-      .where('informe.tenant_id = :tenantId', { tenantId });
+      .where('(informe.tenant_id = :tenantId OR informe.tenant_id = \'default\')', { tenantId });
 
     if (areaId) {
       qb.andWhere('(area.id_area = :areaId OR area.id_area IS NULL)', { areaId });
@@ -129,7 +133,7 @@ export class InformesService {
       .leftJoinAndSelect('informe.usuario', 'usuario')
       .leftJoinAndSelect('usuario.area', 'area')
       .leftJoinAndSelect('informe.versiones', 'versiones')
-      .where('informe.tenant_id = :tenantId', { tenantId })
+      .where('(informe.tenant_id = :tenantId OR informe.tenant_id = \'default\')', { tenantId })
       .andWhere('(periodo.anio < :currentYear OR (periodo.anio = :currentYear AND periodo.mes < :currentMonth))', {
         currentYear,
         currentMonth,

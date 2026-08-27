@@ -34,7 +34,7 @@ export class CoordinadorController {
   async chat(@Body() dto: CoordinadorChatDto, @Request() req: any) {
     return this.coordinadorService.chatCoordinador(
       dto.mensaje,
-      req.user.sub,
+      req.user,
       dto.telefono,
     );
   }
