@@ -9,9 +9,10 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Informe } from '../../informes/entities/informe.entity';
+import { TenantBaseEntity } from '../../common/tenant/tenant-base.entity';
 
 @Entity('informe_gf')
-export class InformeGf {
+export class InformeGf extends TenantBaseEntity {
   @PrimaryGeneratedColumn({ name: 'id_informe_gf' })
   id_informe_gf!: number;
 

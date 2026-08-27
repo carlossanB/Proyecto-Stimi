@@ -43,6 +43,7 @@ import { CoordinadorModule } from './coordinador/coordinador.module';
             database: config.get<string>('DB_NAME', 'sena'),
             entities: [__dirname + '/**/*.entity{.ts,.js}'],
             migrations: [__dirname + '/migrations/*{.ts,.js}'],
+            subscribers: [__dirname + '/**/*.subscriber{.ts,.js}'],
             synchronize: sync,
             migrationsRun: true,
           };
@@ -54,6 +55,7 @@ import { CoordinadorModule } from './coordinador/coordinador.module';
           location: config.get<string>('DB_NAME', 'sena.db'),
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
           migrations: [__dirname + '/migrations/*{.ts,.js}'],
+          subscribers: [__dirname + '/**/*.subscriber{.ts,.js}'],
           synchronize: sync,
           migrationsRun: true,
         };

@@ -7,11 +7,12 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Persona } from '../../personas/entities/persona.entity';
+import { TenantBaseEntity } from '../../common/tenant/tenant-base.entity';
 
 export type NotificacionTipo = 'success' | 'warning' | 'info' | 'error';
 
 @Entity('notificaciones')
-export class Notificacion {
+export class Notificacion extends TenantBaseEntity {
   @PrimaryGeneratedColumn({ name: 'id_notificacion' })
   id_notificacion!: number;
 

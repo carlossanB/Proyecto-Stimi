@@ -6,6 +6,7 @@ import { Persona } from './entities/persona.entity';
 import { CreatePersonaDto } from './dto/create-persona.dto';
 import { UpdatePersonaDto } from './dto/update-persona.dto';
 import { MailService } from '../mail/mail.service';
+import { TenantContext } from '../common/tenant/tenant.context';
 
 @Injectable()
 export class PersonasService {
@@ -49,6 +50,7 @@ export class PersonasService {
       rol: null,
       area: null,
       estado_cuenta: 'pendiente',
+      tenant_id: TenantContext.getTenantId(),
       regional: createPersonaDto.regional?.trim() || null,
       sede_centro: createPersonaDto.sedeCentro?.trim() || null,
     });
@@ -60,10 +62,11 @@ export class PersonasService {
 
   async findByEmailOrDocument(identifier: string): Promise<Persona | null> {
     const trimmed = identifier.trim().toLowerCase();
+    const tenantId = TenantContext.getTenantId();
     return this.personaRepository.findOne({
       where: [
-        { correo: trimmed },
-        { numero_documento: identifier.trim() }
+        { correo: trimmed, tenant_id: tenantId },
+        { numero_documento: identifier.trim(), tenant_id: tenantId },
       ],
       relations: { area: true, rol: true },
     });
@@ -71,19 +74,22 @@ export class PersonasService {
 
   async findByEmail(email: string): Promise<Persona | null> {
     return this.personaRepository.findOne({
-      where: { correo: email.trim().toLowerCase() },
+      where: { correo: email.trim().toLowerCase(), tenant_id: TenantContext.getTenantId() },
       relations: { area: true, rol: true },
     });
   }
 
 
   findAll() {
-    return this.personaRepository.find({ relations: { area: true, rol: true } });
+    return this.personaRepository.find({
+      where: { tenant_id: TenantContext.getTenantId() },
+      relations: { area: true, rol: true },
+    });
   }
 
   async findOne(id: number) {
     const persona = await this.personaRepository.findOne({
-      where: { id_usuario: id },
+      where: { id_usuario: id, tenant_id: TenantContext.getTenantId() },
       relations: { area: true, rol: true },
     });
     if (!persona) {

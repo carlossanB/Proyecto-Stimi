@@ -15,9 +15,10 @@ import { InformeGc } from '../../informe-gc/entities/informe-gc.entity';
 import { InformeGf } from '../../informe-gf/entities/informe-gf.entity';
 import { PeriodoCarga } from '../../periodos-carga/entities/periodo-carga.entity';
 import { Version } from '../../versiones/entities/version.entity';
+import { TenantBaseEntity } from '../../common/tenant/tenant-base.entity';
 
 @Entity('informes')
-export class Informe {
+export class Informe extends TenantBaseEntity {
   @PrimaryGeneratedColumn({ name: 'id_informe' })
   id_informe!: number;
 

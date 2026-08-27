@@ -43,6 +43,7 @@ export class AuthService {
       sub: user.id_usuario,
       email: user.correo,
       rol: user.rol?.nombre_rol ?? 'instructor',
+      tenantId: user.tenant_id ?? 'default',
     };
 
     const token = this.jwtService.sign(payload);
@@ -63,6 +64,7 @@ export class AuthService {
         firma_digital_ruta: user.firma_digital_ruta || null,
         regional: user.regional ?? null,
         sede_centro: user.sede_centro ?? null,
+        tenantId: user.tenant_id ?? 'default',
       },
     };
   }

@@ -6,13 +6,15 @@ import {
   Index,
 } from 'typeorm';
 
+import { TenantBaseEntity } from '../../common/tenant/tenant-base.entity';
+
 /**
  * Tabla: historial_conversacion
  * Almacena el historial de mensajes del bot Stimi (WhatsApp) por número de teléfono.
  * El nodo "GUARDA el historial" en n8n escribe aquí a través del endpoint POST /webhooks/historial-chat.
  */
 @Entity('historial_conversacion')
-export class HistorialConversacion {
+export class HistorialConversacion extends TenantBaseEntity {
   @PrimaryGeneratedColumn()
   id!: number;
 

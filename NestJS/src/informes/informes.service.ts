@@ -18,6 +18,7 @@ import { Contrato } from '../contratos/entities/contrato.entity';
 import { NotificacionesService } from '../notificaciones/notificaciones.service';
 import { N8nService } from '../n8n/n8n.service';
 import { MailService } from '../mail/mail.service';
+import { TenantContext } from '../common/tenant/tenant.context';
 
 
 @Injectable()
@@ -62,8 +63,9 @@ export class InformesService {
   }
 
   async findInstructorReports(idUsuario: number) {
+    const tenantId = TenantContext.getTenantId();
     const reports = await this.informeRepository.find({
-      where: { usuario: { id_usuario: idUsuario } },
+      where: { usuario: { id_usuario: idUsuario }, tenant_id: tenantId },
       relations: { periodo: true, usuario: true, versiones: true },
       order: {
         periodo: { anio: 'DESC', mes: 'DESC' },
@@ -85,14 +87,16 @@ export class InformesService {
   }
 
   async findCoordinatorReports(areaId?: number) {
+    const tenantId = TenantContext.getTenantId();
     const qb = this.informeRepository.createQueryBuilder('informe')
       .leftJoinAndSelect('informe.periodo', 'periodo')
       .leftJoinAndSelect('informe.usuario', 'usuario')
       .leftJoinAndSelect('usuario.area', 'area')
-      .leftJoinAndSelect('informe.versiones', 'versiones');
+      .leftJoinAndSelect('informe.versiones', 'versiones')
+      .where('informe.tenant_id = :tenantId', { tenantId });
 
     if (areaId) {
-      qb.where('(area.id_area = :areaId OR area.id_area IS NULL)', { areaId });
+      qb.andWhere('(area.id_area = :areaId OR area.id_area IS NULL)', { areaId });
     }
 
     qb.orderBy('periodo.anio', 'DESC')
@@ -118,13 +122,15 @@ export class InformesService {
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1;
+    const tenantId = TenantContext.getTenantId();
 
     const query = this.informeRepository.createQueryBuilder('informe')
       .leftJoinAndSelect('informe.periodo', 'periodo')
       .leftJoinAndSelect('informe.usuario', 'usuario')
       .leftJoinAndSelect('usuario.area', 'area')
       .leftJoinAndSelect('informe.versiones', 'versiones')
-      .where('(periodo.anio < :currentYear OR (periodo.anio = :currentYear AND periodo.mes < :currentMonth))', {
+      .where('informe.tenant_id = :tenantId', { tenantId })
+      .andWhere('(periodo.anio < :currentYear OR (periodo.anio = :currentYear AND periodo.mes < :currentMonth))', {
         currentYear,
         currentMonth,
       });
@@ -143,10 +149,12 @@ export class InformesService {
   }
 
   async getEstadisticas(filtros: { instructorId?: number; mes?: string; areaId?: number }) {
+    const tenantId = TenantContext.getTenantId();
     const qb = this.informeRepository.createQueryBuilder('informe')
       .leftJoinAndSelect('informe.usuario', 'usuario')
       .leftJoinAndSelect('usuario.area', 'area')
-      .leftJoinAndSelect('informe.periodo', 'periodo');
+      .leftJoinAndSelect('informe.periodo', 'periodo')
+      .where('informe.tenant_id = :tenantId', { tenantId });
 
     if (filtros.instructorId) {
       qb.andWhere('usuario.id_usuario = :instructorId', { instructorId: filtros.instructorId });

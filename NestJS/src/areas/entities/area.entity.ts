@@ -7,8 +7,10 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+import { TenantBaseEntity } from '../../common/tenant/tenant-base.entity';
+
 @Entity('areas')
-export class Area {
+export class Area extends TenantBaseEntity {
   @PrimaryGeneratedColumn({ name: 'id_area' })
   id_area!: number;
 

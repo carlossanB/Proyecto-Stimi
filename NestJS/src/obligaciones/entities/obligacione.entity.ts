@@ -9,9 +9,10 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Contrato } from '../../contratos/entities/contrato.entity';
+import { TenantBaseEntity } from '../../common/tenant/tenant-base.entity';
 
 @Entity('obligaciones')
-export class Obligacione {
+export class Obligacione extends TenantBaseEntity {
   @PrimaryGeneratedColumn({ name: 'id_obligacion' })
   id_obligacion!: number;
 

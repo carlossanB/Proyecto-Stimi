@@ -11,9 +11,10 @@ import {
 } from 'typeorm';
 import { Evidencia } from '../../evidencias/entities/evidencia.entity';
 import { InformeGc } from '../../informe-gc/entities/informe-gc.entity';
+import { TenantBaseEntity } from '../../common/tenant/tenant-base.entity';
 
 @Entity('actividades')
-export class Actividad {
+export class Actividad extends TenantBaseEntity {
   @PrimaryGeneratedColumn({ name: 'id_actividad' })
   id_actividad!: number;
 

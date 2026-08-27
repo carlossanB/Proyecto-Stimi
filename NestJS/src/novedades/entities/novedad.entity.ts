@@ -1,8 +1,10 @@
 import { Column, Entity, ManyToOne, JoinColumn, PrimaryGeneratedColumn } from 'typeorm';
 import { Version } from '../../versiones/entities/version.entity';
 
+import { TenantBaseEntity } from '../../common/tenant/tenant-base.entity';
+
 @Entity('novedades')
-export class Novedad {
+export class Novedad extends TenantBaseEntity {
   @PrimaryGeneratedColumn()
   id_novedad!: number;
 

@@ -14,6 +14,7 @@ const options: any = dbType === 'postgres'
       database: process.env.DB_NAME || 'proyecto_formativo',
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       migrations: [__dirname + '/migrations/*{.ts,.js}'],
+      subscribers: [__dirname + '/**/*.subscriber{.ts,.js}'],
       synchronize: false,
     }
   : {
@@ -21,6 +22,7 @@ const options: any = dbType === 'postgres'
       database: process.env.DB_NAME || 'sena.db',
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       migrations: [__dirname + '/migrations/*{.ts,.js}'],
+      subscribers: [__dirname + '/**/*.subscriber{.ts,.js}'],
       synchronize: false,
     };
 

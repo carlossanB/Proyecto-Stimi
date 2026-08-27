@@ -22,12 +22,14 @@ api.interceptors.request.use(
     if (userStr && config.headers) {
       try {
         const user = JSON.parse(userStr);
-        // Adjuntar el centroId/centroSlug como header x-tenant-id si existe
-        const centroId: string | undefined =
-          user.centroId || user.centroSlug || user.centro || undefined;
+        // tenantId es el campo canónico emitido por el backend desde la Fase 3.
+        // Los campos legacy (centroId, centroSlug, centro) se mantienen como
+        // fallback para compatibilidad con tokens emitidos antes de la migración.
+        const tenantId: string | undefined =
+          user.tenantId || user.centroId || user.centroSlug || user.centro || undefined;
 
-        if (centroId) {
-          config.headers['x-tenant-id'] = centroId;
+        if (tenantId) {
+          config.headers['x-tenant-id'] = tenantId;
         }
       } catch (_) {
         // Si el JSON no es válido no hacer nada (fallback a tenant por defecto)

@@ -41,50 +41,69 @@ export class AppService implements OnModuleInit {
         await areaRepo.save(tiArea);
       }
 
-      // Check if default instructor exists
-      const instructorUser = await personaRepo.findOne({
-        where: [
-          { numero_documento: '123456' },
-          { correo: 'juan.perez@sena.edu.co' }
-        ],
-      });
-      if (!instructorUser) {
-        const contrasenaHash = await bcrypt.hash('instructor123', 10);
-        const newInstructor = personaRepo.create({
-          nombre_completo: 'Juan Pérez',
-          tipo_documento: 'CC',
-          numero_documento: '123456',
-          correo: 'juan.perez@sena.edu.co',
-          contrasena_hash: contrasenaHash,
-          rol: instructorRol,
-          area: tiArea,
-          estado_cuenta: 'aprobado',
-        });
-        await personaRepo.save(newInstructor);
-        console.log('Seeded instructor user (Juan Pérez)');
+      // ── Seed instructor ──────────────────────────────────────────────────────
+      // withDeleted() incluye registros soft-deleted para evitar falsos negativos
+      const instructorExists = await personaRepo
+        .createQueryBuilder('u')
+        .withDeleted()
+        .where('u.numero_documento = :doc', { doc: '123456' })
+        .getOne();
+
+      if (!instructorExists) {
+        try {
+          const contrasenaHash = await bcrypt.hash('instructor123', 10);
+          const newInstructor = personaRepo.create({
+            nombre_completo: 'Juan Pérez',
+            tipo_documento: 'CC',
+            numero_documento: '123456',
+            correo: 'juan.perez@sena.edu.co',
+            contrasena_hash: contrasenaHash,
+            rol: instructorRol,
+            area: tiArea,
+            estado_cuenta: 'aprobado',
+            tenant_id: 'default',
+          });
+          await personaRepo.save(newInstructor);
+          console.log('Seeded instructor user (Juan Pérez)');
+        } catch (seedErr: any) {
+          if (seedErr?.code === '23505') {
+            console.warn('Seed instructor: ya existe, se omite.');
+          } else {
+            throw seedErr;
+          }
+        }
       }
 
-      // Check if default coordinator exists
-      const coordinatorUser = await personaRepo.findOne({
-        where: [
-          { numero_documento: '654321' },
-          { correo: 'maria.garcia@sena.edu.co' }
-        ],
-      });
-      if (!coordinatorUser) {
-        const contrasenaHash = await bcrypt.hash('coordinador123', 10);
-        const newCoordinator = personaRepo.create({
-          nombre_completo: 'María García',
-          tipo_documento: 'CC',
-          numero_documento: '654321',
-          correo: 'maria.garcia@sena.edu.co',
-          contrasena_hash: contrasenaHash,
-          rol: coordinadorRol,
-          area: tiArea,
-          estado_cuenta: 'aprobado',
-        });
-        await personaRepo.save(newCoordinator);
-        console.log('Seeded coordinator user (María García)');
+      // ── Seed coordinador ─────────────────────────────────────────────────────
+      const coordinadorExists = await personaRepo
+        .createQueryBuilder('u')
+        .withDeleted()
+        .where('u.numero_documento = :doc', { doc: '654321' })
+        .getOne();
+
+      if (!coordinadorExists) {
+        try {
+          const contrasenaHash = await bcrypt.hash('coordinador123', 10);
+          const newCoordinator = personaRepo.create({
+            nombre_completo: 'María García',
+            tipo_documento: 'CC',
+            numero_documento: '654321',
+            correo: 'maria.garcia@sena.edu.co',
+            contrasena_hash: contrasenaHash,
+            rol: coordinadorRol,
+            area: tiArea,
+            estado_cuenta: 'aprobado',
+            tenant_id: 'default',
+          });
+          await personaRepo.save(newCoordinator);
+          console.log('Seeded coordinator user (María García)');
+        } catch (seedErr: any) {
+          if (seedErr?.code === '23505') {
+            console.warn('Seed coordinador: ya existe, se omite.');
+          } else {
+            throw seedErr;
+          }
+        }
       }
     } catch (error) {
       console.error('Error during database seeding:', error);

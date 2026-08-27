@@ -7,8 +7,10 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+import { TenantBaseEntity } from '../../common/tenant/tenant-base.entity';
+
 @Entity('periodos_carga')
-export class PeriodoCarga {
+export class PeriodoCarga extends TenantBaseEntity {
   @PrimaryGeneratedColumn({ name: 'id_periodo' })
   id_periodo!: number;
 

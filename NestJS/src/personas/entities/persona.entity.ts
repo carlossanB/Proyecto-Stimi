@@ -10,9 +10,10 @@ import {
 } from 'typeorm';
 import { Area } from '../../areas/entities/area.entity';
 import { Rol } from '../../rol/entities/rol.entity';
+import { TenantBaseEntity } from '../../common/tenant/tenant-base.entity';
 
 @Entity('usuarios')
-export class Persona {
+export class Persona extends TenantBaseEntity {
   @PrimaryGeneratedColumn({ name: 'id_usuario' })
   id_usuario!: number;
 

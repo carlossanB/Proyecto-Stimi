@@ -11,9 +11,10 @@ import {
 } from 'typeorm';
 import { Persona } from '../../personas/entities/persona.entity';
 import { Obligacione } from '../../obligaciones/entities/obligacione.entity';
+import { TenantBaseEntity } from '../../common/tenant/tenant-base.entity';
 
 @Entity('contratos')
-export class Contrato {
+export class Contrato extends TenantBaseEntity {
   @PrimaryGeneratedColumn({ name: 'id_contrato' })
   id_contrato!: number;
 
