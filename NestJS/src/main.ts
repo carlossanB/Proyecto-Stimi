@@ -23,11 +23,15 @@ async function bootstrap() {
 
   const uploadDir = join(process.cwd(), 'uploads', 'informes');
   const signaturesDir = join(process.cwd(), 'uploads', 'firmas');
+  const perfilesDir = join(process.cwd(), 'uploads', 'perfiles');
   if (!existsSync(uploadDir)) {
     mkdirSync(uploadDir, { recursive: true });
   }
   if (!existsSync(signaturesDir)) {
     mkdirSync(signaturesDir, { recursive: true });
+  }
+  if (!existsSync(perfilesDir)) {
+    mkdirSync(perfilesDir, { recursive: true });
   }
 
   app.setGlobalPrefix('api');

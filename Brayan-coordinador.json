@@ -371,6 +371,103 @@
         800
       ],
       "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat-coordinador-web",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -2368,
+        600
+      ],
+      "id": "a1b2c3d4-web-coordinador-0001",
+      "name": "Webhook Web Coordinador",
+      "webhookId": "chat-coordinador-web-id"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Obtener mensaje e información de entrada\nconst item = $input.item.json;\nconst textoRaw = item.texto || item.mensaje || item.chatInput || '';\nconst texto = textoRaw.toLowerCase().trim();\n\n// Patrones de detección para coordinador\nconst regexResumen = /\\b(resumen|global|estadistica|estadisticas|total|cumplimiento|tasa|reporte|general|cuantos informes|cuántos informes|cuanto informe)\\b/i;\nconst regexCargaron = /\\b(quien cargo|quién cargó|quienes cargaron|quiénes cargaron|quien subio|quién subió|instructores que cargaron|cargaron|subieron|ya cargaron)\\b/i;\nconst regexPendientes = /\\b(quien falta|quién falta|quienes faltan|quiénes faltan|no han cargado|sin cargar|no han subido|sin subida|faltan por entregar)\\b/i;\nconst regexInstructor = /\\b(instructor|cedula|cédula|documento|buscar instructor)\\b/i;\nconst regexNumero = /\\b\\d{5,12}\\b/;\n\nlet intencion = 'llm';\nlet tipoConsulta = 'resumen';\nlet busquedaParam = '';\n\nif (regexCargaron.test(texto)) {\n  intencion = 'consulta_db';\n  tipoConsulta = 'cargaron';\n} else if (regexPendientes.test(texto)) {\n  intencion = 'consulta_db';\n  tipoConsulta = 'pendientes';\n} else if (regexInstructor.test(texto) || regexNumero.test(texto)) {\n  intencion = 'consulta_db';\n  tipoConsulta = 'instructor';\n  const matchNum = texto.match(/\\b\\d{5,12}\\b/);\n  if (matchNum) {\n    busquedaParam = matchNum[0];\n  } else {\n    busquedaParam = textoRaw.replace(/instructor|cédula|cedula|buscar|de|del|por/gi, '').trim();\n  }\n} else if (regexResumen.test(texto)) {\n  intencion = 'consulta_db';\n  tipoConsulta = 'resumen';\n}\n\nreturn [{\n  json: {\n    ...item,\n    intencion,\n    tipoConsulta,\n    busquedaParam,\n    textoOriginal: textoRaw\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1850,
+        600
+      ],
+      "id": "a1b2c3d4-detectar-intencion-0002",
+      "name": "Detectar Intención Coordinador"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "c_db_01",
+              "leftValue": "={{ $json.intencion }}",
+              "rightValue": "consulta_db",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1650,
+        600
+      ],
+      "id": "a1b2c3d4-enrutar-intencion-0003",
+      "name": "Enrutar Intención Coordinador"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ $json.tipoConsulta === 'cargaron' ? \"SELECT u.nombre_completo, u.numero_documento, COUNT(i.id_informe)::int AS informes FROM usuarios u JOIN informes i ON i.id_usuario = u.id_usuario AND i.deleted_at IS NULL GROUP BY u.id_usuario, u.nombre_completo, u.numero_documento ORDER BY informes DESC LIMIT 20;\" : ($json.tipoConsulta === 'pendientes' ? \"SELECT u.nombre_completo, u.numero_documento FROM usuarios u WHERE u.deleted_at IS NULL AND u.id_usuario NOT IN (SELECT DISTINCT id_usuario FROM informes WHERE deleted_at IS NULL) LIMIT 20;\" : ($json.tipoConsulta === 'instructor' && $json.busquedaParam ? \"SELECT u.nombre_completo, u.numero_documento, COUNT(i.id_informe) FILTER (WHERE i.estado = 'pendiente')::int AS pendientes, COUNT(i.id_informe) FILTER (WHERE i.estado = 'validado')::int AS validados, COUNT(i.id_informe) FILTER (WHERE i.estado = 'devuelto')::int AS devueltos, COUNT(i.id_informe)::int AS total FROM usuarios u LEFT JOIN informes i ON i.id_usuario = u.id_usuario AND i.deleted_at IS NULL WHERE u.deleted_at IS NULL AND (u.numero_documento ILIKE '%\" + $json.busquedaParam.replace(/'/g, \"''\") + \"%' OR u.nombre_completo ILIKE '%\" + $json.busquedaParam.replace(/'/g, \"''\") + \"%') GROUP BY u.id_usuario, u.nombre_completo, u.numero_documento;\" : \"SELECT COUNT(*) FILTER (WHERE estado = 'pendiente')::int AS pendientes, COUNT(*) FILTER (WHERE estado = 'validado')::int AS validados, COUNT(*) FILTER (WHERE estado = 'devuelto')::int AS devueltos, COUNT(*)::int AS total, ROUND(100.0 * COUNT(*) FILTER (WHERE estado = 'validado') / NULLIF(COUNT(*),0), 1)::float AS tasa_cumplimiento FROM informes WHERE deleted_at IS NULL;\")) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        -1400,
+        500
+      ],
+      "id": "a1b2c3d4-consulta-db-0004",
+      "name": "Consulta DB Coordinador",
+      "credentials": {
+        "postgres": {
+          "id": "0NKoNLBxApXsXZJE",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst ctx = $('Detectar Intención Coordinador').first().json;\nconst tipo = ctx.tipoConsulta;\n\nlet msgText = '';\n\nif (tipo === 'cargaron') {\n  if (!items || items.length === 0 || !items[0].json.nombre_completo) {\n    msgText = '📋 *Instructores con informes cargados:*\\n\\nAún no hay instructores con informes radicados en el sistema.';\n  } else {\n    const lineas = items.map((it, idx) => {\n      const r = it.json;\n      return `${idx + 1}. *${r.nombre_completo}* (CC ${r.numero_documento}): ${r.informes} informe(s)`;\n    }).join('\\n');\n    msgText = `📋 *Instructores con informes radicados:*\\n\\n${lineas}\\n\\nTotal instructores con entregas: ${items.length}`;\n  }\n} else if (tipo === 'pendientes') {\n  if (!items || items.length === 0 || !items[0].json.nombre_completo) {\n    msgText = '✅ *Estado de entregas:*\\n\\n¡Excelente! Todos los instructores activos han cargado al menos un informe.';\n  } else {\n    const lineas = items.map((it, idx) => {\n      const r = it.json;\n      return `${idx + 1}. *${r.nombre_completo}* (CC ${r.numero_documento})`;\n    }).join('\\n');\n    msgText = `⚠️ *Instructores sin informes cargados registrados:*\\n\\n${lineas}`;\n  }\n} else if (tipo === 'instructor') {\n  if (!items || items.length === 0 || !items[0].json.nombre_completo) {\n    msgText = `🔍 No se encontró ningún instructor con la búsqueda \"${ctx.busquedaParam}\". Verifica el nombre o la cédula.`;\n  } else {\n    const r = items[0].json;\n    msgText = `👤 *Estado del Instructor ${r.nombre_completo}* (CC ${r.numero_documento}):\\n\\n• *Pendientes:* ${r.pendientes || 0}\\n• *Validados:* ${r.validados || 0}\\n• *Devueltos:* ${r.devueltos || 0}\\n• *Total de informes:* ${r.total || 0}`;\n  }\n} else {\n  const r = items[0]?.json || {};\n  const pendientes = r.pendientes || 0;\n  const validados = r.validados || 0;\n  const devueltos = r.devueltos || 0;\n  const total = r.total || 0;\n  const tasa = r.tasa_cumplimiento != null ? r.tasa_cumplimiento : 0;\n\n  msgText = `📊 *Resumen General de Informes STIMI:*\\n\\n• *Pendientes:* ${pendientes}\\n• *Validados:* ${validados}\\n• *Devueltos:* ${devueltos}\\n• *Total cargados:* ${total}\\n• *Tasa de cumplimiento:* ${tasa}%\\n\\n🦅 Puedes preguntarme por instructores específicos o por quienes faltan entregar.`;\n}\n\nreturn [{\n  json: {\n    telefono: ctx.telefono || '0000000000',\n    mensaje: msgText,\n    respuesta: msgText,\n    output: msgText,\n    text: msgText,\n    ok: true,\n    pregunta_log: ctx.textoOriginal || 'Consulta DB',\n    origen: ctx.origen || 'pagina_web_coordinador'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1100,
+        500
+      ],
+      "id": "a1b2c3d4-formatear-db-0005",
+      "name": "Formatear Respuesta Datos Coordinador"
     }
   ],
   "pinData": {
@@ -53721,7 +53818,7 @@
       "main": [
         [
           {
-            "node": "Consulta Historial",
+            "node": "Detectar Intención Coordinador",
             "type": "main",
             "index": 0
           }
@@ -53832,6 +53929,68 @@
         [
           {
             "node": "Rate Limiter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Web Coordinador": {
+      "main": [
+        [
+          {
+            "node": "Extraer Datos Mensaje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detectar Intención Coordinador": {
+      "main": [
+        [
+          {
+            "node": "Enrutar Intención Coordinador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrutar Intención Coordinador": {
+      "main": [
+        [
+          {
+            "node": "Consulta DB Coordinador",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Consulta Historial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consulta DB Coordinador": {
+      "main": [
+        [
+          {
+            "node": "Formatear Respuesta Datos Coordinador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Respuesta Datos Coordinador": {
+      "main": [
+        [
+          {
+            "node": "Limit",
             "type": "main",
             "index": 0
           }

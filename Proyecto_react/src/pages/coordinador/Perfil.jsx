@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FiUser, FiMail, FiCreditCard, FiHash, FiBriefcase, FiMapPin, FiLock, FiEdit2, FiSave, FiX } from 'react-icons/fi';
+import { FiUser, FiMail, FiCreditCard, FiHash, FiBriefcase, FiMapPin, FiLock, FiEdit2, FiSave, FiX, FiUploadCloud } from 'react-icons/fi';
 import { toast } from 'sonner';
 import api from '../../services/api';
 import PageContainer from '../../components/PageContainer';
@@ -15,6 +15,7 @@ export default function PerfilCoordinador() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   // Form fields state initialized from current authenticated user
   const [nombreCompleto, setNombreCompleto] = useState('');
@@ -23,6 +24,69 @@ export default function PerfilCoordinador() {
   const [numeroDocumento, setNumeroDocumento] = useState('');
   const [regional, setRegional] = useState('');
   const [sedeCentro, setSedeCentro] = useState('');
+
+  const getFileUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    return `${baseUrl}${cleanPath}`;
+  };
+
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.match(/^image\/(jpeg|jpg|png|webp)$/)) {
+      toast.error('Por favor, cargue una imagen válida (PNG, JPG, JPEG, WEBP)');
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('El tamaño de la foto excede el límite de 2 MB');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('foto', file);
+
+    setUploadingPhoto(true);
+    const toastId = toast.loading('Subiendo foto de perfil...');
+
+    try {
+      const response = await api.post('/personas/me/foto', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      const photoPath = response.data.foto_perfil_ruta;
+      updateLocalUser({ foto_perfil_ruta: photoPath });
+      toast.success('¡Foto de perfil actualizada correctamente!', { id: toastId });
+    } catch (err) {
+      console.error('Error al subir foto:', err);
+      const errMsg = err.response?.data?.message || 'Error al conectar con el servidor';
+      toast.error(`No se pudo subir la foto: ${errMsg}`, { id: toastId });
+    } finally {
+      setUploadingPhoto(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleRemovePhoto = async () => {
+    setUploadingPhoto(true);
+    const toastId = toast.loading('Eliminando foto de perfil...');
+    try {
+      await api.delete('/personas/me/foto');
+      updateLocalUser({ foto_perfil_ruta: null });
+      toast.success('Foto de perfil eliminada', { id: toastId });
+    } catch (err) {
+      console.error('Error al eliminar foto:', err);
+      toast.error('No se pudo eliminar la foto de perfil', { id: toastId });
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
   // Sync state from authenticated user or state editMode
   useEffect(() => {
@@ -160,13 +224,56 @@ export default function PerfilCoordinador() {
         {/* Left Column (Avatar & Quick Info) */}
         <div className="space-y-6">
           <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-3xl p-8 shadow-sm flex flex-col items-center text-center">
-            <div className="w-32 h-32 bg-gray-100 dark:bg-gray-700 rounded-full border-4 border-white dark:border-gray-800 shadow-md flex items-center justify-center mb-4 text-[#407754] dark:text-emerald-400">
-              <FiUser className="w-16 h-16" />
+            <div className="w-32 h-32 bg-gray-100 dark:bg-gray-700 rounded-full border-4 border-white dark:border-gray-800 shadow-md flex items-center justify-center mb-4 text-[#407754] dark:text-emerald-400 relative overflow-hidden">
+              {user?.foto_perfil_ruta ? (
+                <img
+                  src={getFileUrl(user.foto_perfil_ruta)}
+                  alt="Foto de perfil"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <FiUser className="w-16 h-16" />
+              )}
             </div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{displayNombre}</h2>
             <span className="mt-2 bg-green-100 text-green-800 text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">
               {user?.rol === 'Coordinador' ? t('common.coordinadorRole', 'Coordinador') : user?.rol === 'Instructor' ? t('common.instructorRole', 'Instructor') : user?.rol || t('common.coordinadorRole', 'Coordinador')}
             </span>
+
+            {/* Foto de Perfil Controls */}
+            <div className="mt-5 w-full flex flex-col items-center gap-2">
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                id="foto-upload-input-coord"
+                onChange={handlePhotoChange}
+                disabled={uploadingPhoto}
+              />
+              <div className="flex gap-2 w-full">
+                <label
+                  htmlFor="foto-upload-input-coord"
+                  className={`flex-1 py-2 px-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-bold text-xs rounded-xl transition-all cursor-pointer text-center flex items-center justify-center gap-1.5 shadow-xs ${
+                    uploadingPhoto ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  <FiUploadCloud className="w-4 h-4" />
+                  {uploadingPhoto ? 'Subiendo...' : (user?.foto_perfil_ruta ? 'Cambiar Foto' : 'Subir Foto')}
+                </label>
+
+                {user?.foto_perfil_ruta && (
+                  <button
+                    type="button"
+                    onClick={handleRemovePhoto}
+                    disabled={uploadingPhoto}
+                    className="py-2 px-3 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center"
+                    title="Eliminar foto de perfil"
+                  >
+                    <FiX className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Security */}

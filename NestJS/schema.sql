@@ -43,6 +43,7 @@ CREATE TABLE "usuarios" (
   "contrasena_hash" VARCHAR(255) NOT NULL,
   "estado_cuenta" VARCHAR(20) NOT NULL DEFAULT 'pendiente',
   "firma_digital_ruta" VARCHAR(255),
+  "foto_perfil_ruta" VARCHAR(255),
   "firma_digital_actualizada_at" TIMESTAMP,
   "preferencias_notificaciones" TEXT NOT NULL DEFAULT '{}',
   "aprobado_por_id" INTEGER,

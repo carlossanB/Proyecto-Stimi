@@ -72,7 +72,7 @@ export class WebhooksService {
   async procesarChatAsistente(
     dto: AsistenteChatDto,
     usuarioPayload: any,
-  ): Promise<{ respuesta: string }> {
+  ): Promise<{ respuesta: string; mensaje: string; ok: boolean; origen?: string }> {
     const usuarioId =
       usuarioPayload?.id_usuario || usuarioPayload?.id || usuarioPayload?.sub;
 
@@ -85,12 +85,23 @@ export class WebhooksService {
       usuarioPayload?.nombre ||
       'Instructor';
 
+    const rawWebhookUrl =
+      this.configService.get<string>('N8N_WEBHOOK_CHAT_INSTRUCTOR') || '';
     const webhookUrl =
-      this.configService.get<string>('N8N_WEBHOOK_CHAT_INSTRUCTOR') ||
+      rawWebhookUrl.trim() ||
       'https://n8n.stimi.online/webhook/chat-instructor-web';
-    const webhookKey = this.configService.get<string>(
-      'N8N_WEBHOOK_CHAT_INSTRUCTOR_KEY',
-    );
+
+    const rawWebhookKey =
+      this.configService.get<string>('N8N_WEBHOOK_CHAT_INSTRUCTOR_KEY') || '';
+    const webhookKey = rawWebhookKey.trim();
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (webhookKey) {
+      headers['x-webhook-key'] = webhookKey;
+      headers['Authorization'] = webhookKey;
+    }
 
     const payload = {
       usuarioId: Number(usuarioId),
@@ -98,65 +109,99 @@ export class WebhooksService {
       nombre,
     };
 
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 60000);
+    let response: Response;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 60000);
 
-      const response = await fetch(webhookUrl, {
+    try {
+      response = await fetch(webhookUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(webhookKey && {
-            'x-webhook-key': webhookKey,
-            Authorization: webhookKey,
-          }),
-        },
+        headers,
         body: JSON.stringify(payload),
         signal: controller.signal,
       });
-
+    } catch (fetchError: any) {
       clearTimeout(timeout);
-
-      if (!response.ok) {
-        const errText = await response.text().catch(() => '');
-        this.logger.error(
-          `[ChatInstructor] n8n respondió con ${response.status}: ${errText.slice(0, 200)}`,
-        );
-        throw new InternalServerErrorException(
-          'Error en el servicio de chat del instructor. Por favor, intenta de nuevo.',
-        );
-      }
-
-      const data = (await response.json()) as any;
-      const respuesta: string =
-        data?.respuesta ??
-        data?.mensaje ??
-        data?.output ??
-        data?.text ??
-        'El asistente no pudo generar una respuesta. Intenta de nuevo.';
-
-      this.logger.log(
-        `[ChatInstructor] Respuesta de n8n recibida para usuarioId=${usuarioId}`,
-      );
-      return { respuesta };
-    } catch (error: any) {
-      if (
-        error instanceof InternalServerErrorException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
-      if (error.name === 'AbortError') {
-        this.logger.error('[ChatInstructor] Timeout esperando respuesta de n8n');
+      if (fetchError.name === 'AbortError') {
+        this.logger.error('[ChatInstructor] Timeout (60s) esperando respuesta de n8n');
         throw new InternalServerErrorException(
           'El asistente está tardando demasiado. Intenta de nuevo.',
         );
       }
-      this.logger.error(`[ChatInstructor] Error inesperado: ${error.message}`);
+      const causeInfo = fetchError.cause ? JSON.stringify(fetchError.cause) : 'N/A';
+      const stackSnippet = fetchError.stack ? fetchError.stack.slice(0, 300) : 'N/A';
+      this.logger.error(
+        `[ChatInstructor] Error de red llamando a n8n: name=${fetchError.name} | message=${fetchError.message} | cause=${causeInfo} | stack=${stackSnippet}`,
+      );
       throw new InternalServerErrorException(
         'No se pudo conectar con el asistente. Verifica tu conexión.',
       );
     }
+
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '');
+      this.logger.error(
+        `[ChatInstructor] n8n respondió status ${response.status}: ${errText.slice(0, 300)}`,
+      );
+      throw new InternalServerErrorException(
+        'Error en el servicio de chat del instructor. Por favor, intenta de nuevo.',
+      );
+    }
+
+    let responseText = '';
+    try {
+      responseText = await response.text();
+    } catch (readError: any) {
+      this.logger.error(
+        `[ChatInstructor] Error leyendo cuerpo de respuesta de n8n: ${readError.message}`,
+      );
+      throw new InternalServerErrorException(
+        'Error al leer la respuesta del servicio de chat.',
+      );
+    }
+
+    let data: any;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError: any) {
+      const preview = responseText.slice(0, 300);
+      this.logger.error(
+        `[ChatInstructor] Error al parsear JSON de n8n (Status ${response.status}). Preview: "${preview}". Error: ${parseError.message}`,
+      );
+      throw new InternalServerErrorException(
+        'La respuesta del servicio de chat no es un JSON válido.',
+      );
+    }
+
+    const respuestaExtraida: string = (
+      data?.mensaje ??
+      data?.respuesta ??
+      data?.output ??
+      data?.text ??
+      ''
+    ).toString().trim();
+
+    if (!respuestaExtraida) {
+      this.logger.warn(
+        `[ChatInstructor] n8n respondió 200 OK pero sin contenido de texto útil. Body: ${JSON.stringify(data).slice(0, 300)}`,
+      );
+      throw new InternalServerErrorException(
+        'El asistente devolvió una respuesta vacía. Por favor, intenta de nuevo.',
+      );
+    }
+
+    this.logger.log(
+      `[ChatInstructor] Respuesta exitosa recibida para usuarioId=${usuarioId}`,
+    );
+
+    return {
+      ok: true,
+      respuesta: respuestaExtraida,
+      mensaje: respuestaExtraida,
+      origen: data?.origen ?? 'pagina_web_instructor',
+    };
   }
 
   // ── 2.5. Validación de informe PDF desde el chat web (Frontend → OpenAI + DB) ─

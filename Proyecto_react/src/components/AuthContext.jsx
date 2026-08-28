@@ -44,6 +44,7 @@ export function AuthProvider({ children }) {
           tipo_documento: data.tipo_documento,
           numero_documento: data.numero_documento,
           firma_digital_ruta: data.firma_digital_ruta || '',
+          foto_perfil_ruta: data.foto_perfil_ruta || null,
           regional: data.regional || null,
           sede_centro: data.sede_centro || null,
         };
@@ -93,6 +94,7 @@ export function AuthProvider({ children }) {
         tipo_documento: apiUser.tipo_documento,
         numero_documento: apiUser.numero_documento,
         firma_digital_ruta: apiUser.firma_digital_ruta || '',
+        foto_perfil_ruta: apiUser.foto_perfil_ruta || null,
         regional: apiUser.regional || null,
         sede_centro: apiUser.sede_centro || null,
       };

@@ -47,6 +47,14 @@ export default function InstructorLayout() {
     { name: t('sidebar.profile', 'Perfil'), path: '/instructor/perfil', icon: FiUser },
   ];
 
+  const getFileUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    return `${baseUrl}${cleanPath}`;
+  };
+
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -127,7 +135,15 @@ export default function InstructorLayout() {
               }`}
               title={t('sidebar.profile', 'Perfil')}
             >
-              <FiUser className="w-6 h-6 shrink-0" />
+              {user?.foto_perfil_ruta ? (
+                <img
+                  src={getFileUrl(user.foto_perfil_ruta)}
+                  alt="Foto de perfil"
+                  className="w-6 h-6 rounded-full object-cover shrink-0 border border-gray-200 dark:border-gray-600"
+                />
+              ) : (
+                <FiUser className="w-6 h-6 shrink-0" />
+              )}
               <div className="ml-4 flex flex-col items-start whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 overflow-hidden">
                 <span className="text-xs text-gray-400 dark:text-gray-500 font-medium truncate w-32 text-left">{t('sidebar.instructor', 'Instructor')}</span>
                 <span className="text-sm font-bold truncate w-32 text-left text-gray-700 dark:text-gray-200">{user?.nombreCompleto || 'Instructor'}</span>
@@ -139,9 +155,17 @@ export default function InstructorLayout() {
               <div className="absolute bottom-full left-20 mb-2 w-80 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-xl p-5 z-50 origin-bottom-left space-y-4 text-gray-900 dark:text-gray-100">
                 {/* Popover Header with Avatar */}
                 <div className="flex items-center gap-3 border-b border-gray-50 dark:border-gray-700 pb-3">
-                  <div className="w-12 h-12 bg-green-50 dark:bg-green-900/40 text-[#407754] dark:text-emerald-400 rounded-full flex items-center justify-center font-bold text-lg shadow-inner flex-shrink-0">
-                    {user?.nombreCompleto ? user.nombreCompleto.substring(0, 2).toUpperCase() : 'IN'}
-                  </div>
+                  {user?.foto_perfil_ruta ? (
+                    <img
+                      src={getFileUrl(user.foto_perfil_ruta)}
+                      alt="Foto de perfil"
+                      className="w-12 h-12 rounded-full object-cover shadow-inner flex-shrink-0 border border-gray-200 dark:border-gray-700"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 bg-green-50 dark:bg-green-900/40 text-[#407754] dark:text-emerald-400 rounded-full flex items-center justify-center font-bold text-lg shadow-inner flex-shrink-0">
+                      {user?.nombreCompleto ? user.nombreCompleto.substring(0, 2).toUpperCase() : 'IN'}
+                    </div>
+                  )}
                   <div>
                     <h4 className="font-bold text-gray-800 dark:text-gray-100 text-sm leading-tight">{user?.nombreCompleto || 'Instructor STIMI'}</h4>
                     <span className="bg-green-100 dark:bg-green-900/60 text-green-700 dark:text-emerald-300 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider mt-1 inline-block">

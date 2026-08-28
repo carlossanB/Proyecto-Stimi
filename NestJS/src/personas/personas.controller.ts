@@ -23,13 +23,80 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/user.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { signatureMulterOptions } from './multer-config';
+import { signatureMulterOptions, profilePhotoMulterOptions } from './multer-config';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 
 @ApiTags('personas')
 @Controller('personas')
 export class PersonasController {
   constructor(private readonly personasService: PersonasService) {}
+
+  @Get('me')
+  @ApiBearerAuth()
+  @UseGuards(JwtGuard)
+  @ApiOperation({ summary: 'Obtener datos del usuario autenticado' })
+  @ApiResponse({ status: 200, description: 'Datos del usuario autenticado.' })
+  async getMe(@CurrentUser() user: any) {
+    return this.personasService.findOne(user.sub);
+  }
+
+  @Post('me/foto')
+  @ApiBearerAuth()
+  @UseGuards(JwtGuard)
+  @UseInterceptors(FileInterceptor('foto', profilePhotoMulterOptions))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Subir o actualizar la foto de perfil del usuario autenticado' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        foto: {
+          type: 'string',
+          format: 'binary',
+          description: 'Imagen de perfil (.png, .jpg, .jpeg, .webp)',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Foto de perfil subida exitosamente.' })
+  @ApiResponse({ status: 400, description: 'Archivo requerido o formato inválido.' })
+  async uploadFoto(
+    @UploadedFile() file: any,
+    @CurrentUser() user: any,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Archivo de foto requerido');
+    }
+    const photoPath = file.path.replace(/\\/g, '/');
+    const persona = await this.personasService.findOne(user.sub);
+    persona.foto_perfil_ruta = photoPath;
+
+    const repo = (this.personasService as any).personaRepository;
+    await repo.save(persona);
+
+    return {
+      success: true,
+      foto_perfil_ruta: photoPath,
+    };
+  }
+
+  @Delete('me/foto')
+  @ApiBearerAuth()
+  @UseGuards(JwtGuard)
+  @ApiOperation({ summary: 'Eliminar la foto de perfil del usuario autenticado' })
+  @ApiResponse({ status: 200, description: 'Foto de perfil eliminada.' })
+  async removeFoto(@CurrentUser() user: any) {
+    const persona = await this.personasService.findOne(user.sub);
+    persona.foto_perfil_ruta = undefined;
+
+    const repo = (this.personasService as any).personaRepository;
+    await repo.save(persona);
+
+    return {
+      success: true,
+      message: 'Foto de perfil eliminada',
+    };
+  }
 
   @Post()
   @ApiOperation({ summary: 'Registrar un nuevo usuario' })

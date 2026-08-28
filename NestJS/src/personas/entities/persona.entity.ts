@@ -49,6 +49,9 @@ export class Persona extends TenantBaseEntity {
   @Column({ name: 'firma_digital_ruta', type: 'varchar', length: 255, nullable: true })
   firma_digital_ruta?: string;
 
+  @Column({ name: 'foto_perfil_ruta', type: 'varchar', length: 255, nullable: true })
+  foto_perfil_ruta?: string;
+
   @Column({ name: 'firma_digital_actualizada_at', type: 'timestamp', nullable: true })
   firma_digital_actualizada_at?: Date;
 
