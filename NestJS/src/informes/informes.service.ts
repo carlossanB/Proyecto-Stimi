@@ -221,6 +221,116 @@ export class InformesService {
     };
   }
 
+  async getResumenCoordinador(coordinatorUserId: number, mes?: string) {
+    const fullUser = await this.getUserWithArea(coordinatorUserId);
+    const areaId = fullUser.area?.id_area;
+    const tenantId = TenantContext.getTenantId();
+
+    const instructoresQb = this.personaRepository.createQueryBuilder('persona')
+      .leftJoinAndSelect('persona.rol', 'rol')
+      .leftJoinAndSelect('persona.area', 'area')
+      .where('LOWER(rol.nombre) = :rolName', { rolName: 'instructor' });
+
+    if (areaId) {
+      instructoresQb.andWhere('(area.id_area = :areaId OR area.id_area IS NULL)', { areaId });
+    }
+
+    const instructores = await instructoresQb.getMany();
+
+    const instructoresMap = new Map<number, {
+      id_usuario: number;
+      nombre_completo: string;
+      correo: string;
+      totales: number;
+      pendientes: number;
+      validados: number;
+      devueltos: number;
+    }>();
+
+    instructores.forEach((inst) => {
+      instructoresMap.set(inst.id_usuario, {
+        id_usuario: inst.id_usuario,
+        nombre_completo: inst.nombre_completo,
+        correo: inst.correo,
+        totales: 0,
+        pendientes: 0,
+        validados: 0,
+        devueltos: 0,
+      });
+    });
+
+    const qb = this.informeRepository.createQueryBuilder('informe')
+      .leftJoinAndSelect('informe.usuario', 'usuario')
+      .leftJoinAndSelect('usuario.area', 'area')
+      .leftJoinAndSelect('informe.periodo', 'periodo')
+      .leftJoinAndSelect('informe.versiones', 'versiones')
+      .where('(informe.tenant_id = :tenantId OR informe.tenant_id = \'default\')', { tenantId });
+
+    if (areaId) {
+      qb.andWhere('(area.id_area = :areaId OR area.id_area IS NULL)', { areaId });
+    }
+
+    if (mes) {
+      const { mes: mesNum, anio } = this.parsePeriod(mes);
+      qb.andWhere('periodo.mes = :mesNum AND periodo.anio = :anio', { mesNum, anio });
+    }
+
+    const informes = await qb.getMany();
+
+    let totalPendientes = 0;
+    let totalValidados = 0;
+    let totalDevueltos = 0;
+
+    informes.forEach((report) => {
+      if (report.versiones && report.versiones.length > 0) {
+        report.versiones.sort((a, b) => b.numero_version - a.numero_version);
+        const latest = report.versiones[0];
+        if (latest && latest.estado) {
+          report.estado = latest.estado;
+        }
+      }
+
+      const isApproved = report.estado === 'validado' || report.estado === 'aprobado';
+      const isRejected = report.estado === 'devuelto' || report.estado === 'rechazado';
+
+      if (isApproved) totalValidados++;
+      else if (isRejected) totalDevueltos++;
+      else totalPendientes++;
+
+      const u = report.usuario;
+      if (u) {
+        let instData = instructoresMap.get(u.id_usuario);
+        if (!instData) {
+          instData = {
+            id_usuario: u.id_usuario,
+            nombre_completo: u.nombre_completo,
+            correo: u.correo,
+            totales: 0,
+            pendientes: 0,
+            validados: 0,
+            devueltos: 0,
+          };
+          instructoresMap.set(u.id_usuario, instData);
+        }
+
+        instData.totales++;
+        if (isApproved) instData.validados++;
+        else if (isRejected) instData.devueltos++;
+        else instData.pendientes++;
+      }
+    });
+
+    return {
+      totales: {
+        total: informes.length,
+        pendientes: totalPendientes,
+        validados: totalValidados,
+        devueltos: totalDevueltos,
+      },
+      instructores: Array.from(instructoresMap.values()),
+    };
+  }
+
   async uploadReport(idUsuario: number, file: any, periodoStr: string, tipo: string) {
     const user = await this.getUserWithArea(idUsuario);
     const periodo = await this.findOrCreatePeriodo(periodoStr);

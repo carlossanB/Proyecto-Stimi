@@ -97,6 +97,20 @@ export class InformesController {
     });
   }
 
+  @Get('resumen-coordinador')
+  @Roles('coordinador')
+  @UseGuards(RolesGuard)
+  @ApiOperation({ summary: 'Obtener resumen de informes por instructor y estado (Solo Coordinadores)' })
+  @ApiQuery({ name: 'mes', required: false, description: 'Ejemplo: Julio 2026' })
+  @ApiResponse({ status: 200, description: 'Resumen de informes por instructor y estado.' })
+  @ApiResponse({ status: 403, description: 'Acceso denegado: rol no es coordinador.' })
+  async getResumenCoordinador(
+    @CurrentUser() user: any,
+    @Query('mes') mes?: string,
+  ) {
+    return this.informesService.getResumenCoordinador(user.sub, mes);
+  }
+
   @Post('upload')
   @UseInterceptors(FileInterceptor('archivo', multerOptions))
   @ApiConsumes('multipart/form-data')

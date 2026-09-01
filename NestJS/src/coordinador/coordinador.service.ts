@@ -27,10 +27,13 @@ export class CoordinadorService {
         : 'Coordinador';
 
     const webhookUrl =
+      process.env.N8N_WEBHOOK_COORDINADOR ||
       this.configService.get<string>('N8N_WEBHOOK_COORDINADOR') ||
       this.configService.get<string>('N8N_WEBHOOK_CHAT_COORDINADOR') ||
       'https://n8n.stimi.online/webhook/chat-coordinador-web';
-    const webhookKey = this.configService.get<string>('N8N_WEBHOOK_COORDINADOR_KEY');
+    const webhookKey =
+      process.env.N8N_WEBHOOK_COORDINADOR_KEY ||
+      this.configService.get<string>('N8N_WEBHOOK_COORDINADOR_KEY');
 
     const payload = {
       usuarioId: Number(usuarioId),
@@ -49,8 +52,7 @@ export class CoordinadorService {
         headers: {
           'Content-Type': 'application/json',
           ...(webhookKey && {
-            'x-webhook-key': webhookKey,
-            'Authorization': webhookKey,
+            clave: webhookKey,
           }),
         },
         body: JSON.stringify(payload),
@@ -69,10 +71,11 @@ export class CoordinadorService {
         );
       }
 
-      const data = (await response.json()) as any;
+      const responseData = (await response.json()) as any;
+      const data = Array.isArray(responseData) ? responseData[0] : responseData;
       const respuesta: string =
-        data?.respuesta ??
         data?.mensaje ??
+        data?.respuesta ??
         data?.output ??
         data?.text ??
         'El asistente de coordinación no pudo generar una respuesta en este momento.';
