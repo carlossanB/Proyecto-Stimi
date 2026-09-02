@@ -18,6 +18,7 @@ export const usuariosService = {
       id_area: u.area?.id_area ?? null,
       id_rol: u.rol?.id_rol ?? null,
       firma_digital_ruta: u.firma_digital_ruta,
+      foto_perfil_ruta: u.foto_perfil_ruta ?? null,
       motivo_rechazo: u.motivo_rechazo
     }));
   },

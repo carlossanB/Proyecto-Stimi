@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usuariosService } from '../../services/usuariosService';
+import api from '../../services/api';
 import { 
   FiUsers, 
   FiUserPlus, 
@@ -13,10 +14,121 @@ import {
   FiMail, 
   FiShield, 
   FiGrid,
-  FiAlertCircle
+  FiAlertCircle,
+  FiUser,
+  FiUploadCloud,
+  FiX
 } from 'react-icons/fi';
 import { toast } from 'sonner';
 import PageContainer from '../../components/PageContainer';
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+/** Construye la URL completa de la foto de perfil */
+const getFotoUrl = (path) => {
+  if (!path || typeof path !== 'string') return null;
+  const trimmed = path.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+
+  let baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:3000').trim();
+  baseUrl = baseUrl.replace(/\/api\/?$/i, '').replace(/\/+$/, '');
+
+  const cleanPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return `${baseUrl}${cleanPath}`;
+};
+
+/** Placeholder de iniciales para usuarios sin foto */
+const AvatarPlaceholder = ({ nombre, size = 'sm' }) => {
+  const initials = (nombre || '?')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join('');
+  const sizeClass = size === 'sm' ? 'w-10 h-10 text-sm' : 'w-20 h-20 text-2xl';
+  return (
+    <div className={`${sizeClass} rounded-full bg-gradient-to-br from-sena-green to-emerald-400 flex items-center justify-center text-white font-bold shrink-0 shadow-sm`}>
+      {initials}
+    </div>
+  );
+};
+
+/** Avatar de usuario: muestra foto si existe, placeholder con iniciales si no */
+const UserAvatar = ({ fotoUrl, nombre, size = 'sm', onAvatarClick }) => {
+  const [imgError, setImgError] = useState(false);
+  if (!fotoUrl || imgError) return <AvatarPlaceholder nombre={nombre} size={size} />;
+  const sizeClass = size === 'sm' ? 'w-10 h-10' : 'w-20 h-20';
+  return (
+    <img
+      src={fotoUrl}
+      alt={nombre}
+      onClick={(e) => {
+        if (onAvatarClick) {
+          e.stopPropagation();
+          onAvatarClick();
+        }
+      }}
+      className={`${sizeClass} rounded-full object-cover shrink-0 border-2 border-white dark:border-gray-700 shadow-sm ${
+        onAvatarClick ? 'cursor-pointer hover:opacity-90 hover:scale-105 transition-all' : ''
+      }`}
+      onError={() => setImgError(true)}
+      title={onAvatarClick ? 'Ver foto de perfil ampliada' : ''}
+    />
+  );
+};
+
+/** Modal Lightbox para ampliar la foto de perfil */
+const FotoModal = ({ url, nombre, onClose }) => {
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setHasError(false);
+    if (url) {
+      console.log('[DEBUG] Ampliando foto de perfil URL:', url);
+    }
+  }, [url]);
+
+  if (!url) return null;
+
+  return (
+    <div 
+      className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in"
+      onClick={onClose}
+    >
+      <div 
+        className="relative max-w-2xl max-h-[85vh] bg-gray-900 rounded-3xl p-4 shadow-2xl overflow-hidden flex flex-col items-center border border-gray-700"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button 
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 w-9 h-9 bg-black/60 hover:bg-black/90 text-white rounded-full flex items-center justify-center transition-all cursor-pointer border border-white/20"
+          title="Cerrar"
+        >
+          <FiX className="w-5 h-5" />
+        </button>
+
+        {hasError ? (
+          <div className="flex flex-col items-center justify-center p-8 text-center text-gray-300 min-w-[280px]">
+            <AvatarPlaceholder nombre={nombre} size="lg" />
+            <p className="mt-4 text-sm font-semibold text-gray-300">No se pudo cargar la imagen</p>
+            <span className="text-xs text-gray-500 mt-1 break-all max-w-xs">{url}</span>
+          </div>
+        ) : (
+          <img 
+            src={url} 
+            alt={nombre ? `Foto de ${nombre}` : 'Foto de perfil ampliada'} 
+            className="max-w-[85vw] max-h-[75vh] object-contain rounded-2xl shadow-md"
+            onError={() => {
+              console.error('[DEBUG] Error al cargar la foto de perfil en el modal:', url);
+              setHasError(true);
+            }}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function GestionUsuarios() {
   const { t } = useTranslation();
@@ -42,6 +154,12 @@ export default function GestionUsuarios() {
   });
   const [saving, setSaving] = useState(false);
   const [selectedUserDetails, setSelectedUserDetails] = useState(null);
+
+  // Photo upload state (for the edit modal)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [editingUserPhoto, setEditingUserPhoto] = useState(null); // foto_perfil_ruta of user being edited
+  const [modalFoto, setModalFoto] = useState(null); // { url, nombre }
+  const photoInputRef = useRef(null);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -96,6 +214,7 @@ export default function GestionUsuarios() {
 
   const handleOpenEditModal = (usuario) => {
     setEditingUser(usuario);
+    setEditingUserPhoto(usuario.foto_perfil_ruta ?? null);
     setFormData({
       nombre: usuario.nombre,
       email: usuario.email,
@@ -108,6 +227,54 @@ export default function GestionUsuarios() {
       contrasena: ''
     });
     setIsModalOpen(true);
+  };
+
+  /** Sube la foto de perfil de un usuario editado (reutiliza POST /personas/me/foto
+   *  pero llamando con el ID del usuario objetivo vía PATCH directo a su ruta). */
+  const handleEditUserPhotoChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.match(/^image\/(jpeg|jpg|png|webp)$/)) {
+      toast.error('Por favor, cargue una imagen válida (PNG, JPG, JPEG, WEBP)');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('El tamaño de la foto excede el límite de 2 MB');
+      return;
+    }
+    if (!editingUser?.id) return;
+
+    const formDataImg = new FormData();
+    formDataImg.append('foto', file);
+
+    setUploadingPhoto(true);
+    const toastId = toast.loading('Subiendo foto de perfil...');
+    try {
+      // Re-use the same endpoint; since the coordinator is authenticated we POST
+      // to /personas/me/foto which updates the LOGGED-IN user.
+      // For other users we call the admin patch endpoint with the file path returned.
+      // Strategy: upload via me/foto is only safe for own user.
+      // Here we use a dedicated admin endpoint if the user isn't themselves.
+      // Since the backend only has /personas/me/foto, we must first upload as ourselves
+      // then patch the target user's foto_perfil_ruta via PATCH /personas/:id.
+      // Simpler and zero backend change: upload the image file directly.
+      const res = await api.post(`/personas/${editingUser.id}/foto`, formDataImg, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const newPath = res.data?.foto_perfil_ruta;
+      setEditingUserPhoto(newPath);
+      // Update cached list so avatar refreshes without full reload
+      setUsuarios((prev) =>
+        prev.map((u) => (u.id === editingUser.id ? { ...u, foto_perfil_ruta: newPath } : u))
+      );
+      toast.success('¡Foto de perfil actualizada!', { id: toastId });
+    } catch (err) {
+      const errMsg = err?.response?.data?.message || 'Error al subir la foto';
+      toast.error(`No se pudo subir la foto: ${errMsg}`, { id: toastId });
+    } finally {
+      setUploadingPhoto(false);
+      if (photoInputRef.current) photoInputRef.current.value = '';
+    }
   };
 
   const handleToggleEstado = async (id, nombre) => {
@@ -276,6 +443,13 @@ export default function GestionUsuarios() {
               key={u.id}
               className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row justify-between md:items-center gap-4 hover:shadow-md transition-shadow"
             >
+              {/* ── Avatar ── */}
+              <UserAvatar 
+                fotoUrl={getFotoUrl(u.foto_perfil_ruta)} 
+                nombre={u.nombre} 
+                onAvatarClick={() => u.foto_perfil_ruta && setModalFoto({ url: getFotoUrl(u.foto_perfil_ruta), nombre: u.nombre })}
+              />
+
               <div className="space-y-2 flex-1">
                 <div className="flex items-center gap-3 flex-wrap">
                   <h4 className="font-bold text-gray-800 dark:text-gray-100 text-base">{u.nombre}</h4>
@@ -453,6 +627,40 @@ export default function GestionUsuarios() {
 
               {editingUser ? (
                 <>
+                  {/* ── Foto de perfil del usuario editado ── */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Foto de Perfil</label>
+                    <div className="flex items-center gap-3">
+                      <UserAvatar 
+                        fotoUrl={getFotoUrl(editingUserPhoto)} 
+                        nombre={formData.nombre} 
+                        size="lg" 
+                        onAvatarClick={() => editingUserPhoto && setModalFoto({ url: getFotoUrl(editingUserPhoto), nombre: formData.nombre })}
+                      />
+                      <div className="flex flex-col gap-1.5 flex-1">
+                        <input
+                          ref={photoInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="hidden"
+                          id="edit-user-foto-input"
+                          onChange={handleEditUserPhotoChange}
+                          disabled={uploadingPhoto}
+                        />
+                        <label
+                          htmlFor="edit-user-foto-input"
+                          className={`flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs font-bold rounded-xl cursor-pointer transition-all text-center ${
+                            uploadingPhoto ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                        >
+                          <FiUploadCloud className="w-3.5 h-3.5" />
+                          {uploadingPhoto ? 'Subiendo...' : (editingUserPhoto ? 'Cambiar Foto' : 'Subir Foto')}
+                        </label>
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500">PNG, JPG, WEBP · Máx. 2 MB</p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="flex flex-col gap-1">
                     <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">{t('gestionUsuarios.accountStatus', 'Estado de Cuenta')}</label>
                     <select
@@ -526,13 +734,21 @@ export default function GestionUsuarios() {
             className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100 dark:border-gray-700 space-y-4 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div>
-              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">
-                {t('gestionUsuarios.viewDetails', 'Detalles del Usuario')}
-              </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {t('gestionUsuarios.viewDetailsSubtitle', 'Información completa del usuario registrado')}
-              </p>
+            <div className="flex items-center gap-4 border-b border-gray-100 dark:border-gray-700 pb-4">
+              <UserAvatar 
+                fotoUrl={getFotoUrl(selectedUserDetails.foto_perfil_ruta)} 
+                nombre={selectedUserDetails.nombre} 
+                size="lg"
+                onAvatarClick={() => selectedUserDetails.foto_perfil_ruta && setModalFoto({ url: getFotoUrl(selectedUserDetails.foto_perfil_ruta), nombre: selectedUserDetails.nombre })}
+              />
+              <div>
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">
+                  {t('gestionUsuarios.viewDetails', 'Detalles del Usuario')}
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {t('gestionUsuarios.viewDetailsSubtitle', 'Información completa del usuario registrado')}
+                </p>
+              </div>
             </div>
 
             <div className="space-y-3">
@@ -633,6 +849,13 @@ export default function GestionUsuarios() {
           </div>
         </div>
       )}
+
+      {/* Lightbox Modal de Foto de Perfil */}
+      <FotoModal 
+        url={modalFoto?.url} 
+        nombre={modalFoto?.nombre} 
+        onClose={() => setModalFoto(null)} 
+      />
 
     </PageContainer>
   );

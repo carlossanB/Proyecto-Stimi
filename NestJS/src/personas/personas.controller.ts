@@ -98,6 +98,48 @@ export class PersonasController {
     };
   }
 
+  @Post(':id/foto')
+  @ApiBearerAuth()
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles('coordinador')
+  @UseInterceptors(FileInterceptor('foto', profilePhotoMulterOptions))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Subir o actualizar la foto de perfil de un usuario (Solo Coordinadores)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        foto: {
+          type: 'string',
+          format: 'binary',
+          description: 'Imagen de perfil (.png, .jpg, .jpeg, .webp)',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Foto de perfil actualizada.' })
+  @ApiResponse({ status: 400, description: 'Archivo requerido o formato inválido.' })
+  @ApiResponse({ status: 403, description: 'Solo coordinadores pueden usar este endpoint.' })
+  async uploadFotoByAdmin(
+    @Param('id') id: string,
+    @UploadedFile() file: any,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Archivo de foto requerido');
+    }
+    const photoPath = file.path.replace(/\\/g, '/');
+    const persona = await this.personasService.findOne(+id);
+    persona.foto_perfil_ruta = photoPath;
+
+    const repo = (this.personasService as any).personaRepository;
+    await repo.save(persona);
+
+    return {
+      success: true,
+      foto_perfil_ruta: photoPath,
+    };
+  }
+
   @Post()
   @ApiOperation({ summary: 'Registrar un nuevo usuario' })
   @ApiResponse({ status: 201, description: 'Usuario registrado exitosamente (pendiente de aprobación).' })

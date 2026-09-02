@@ -106,7 +106,9 @@ export class WebhooksService {
     const payload = {
       usuarioId: Number(usuarioId),
       mensaje: dto.mensaje,
+      historial: Array.isArray(dto.historial) ? dto.historial.slice(-20) : [],
       nombre,
+      telefono: String(usuarioId),
     };
 
     let response: Response;

@@ -21,6 +21,74 @@ import { toast } from 'sonner';
 
 import PageContainer from '../../components/PageContainer';
 
+/** Placeholder de iniciales para usuarios sin foto */
+const AvatarPlaceholder = ({ nombre, size = 'sm' }) => {
+  const initials = (nombre || '?')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join('');
+  const sizeClass = size === 'sm' ? 'w-10 h-10 text-sm' : 'w-20 h-20 text-2xl';
+  return (
+    <div className={`${sizeClass} rounded-full bg-gradient-to-br from-sena-green to-emerald-400 flex items-center justify-center text-white font-bold shrink-0 shadow-sm`}>
+      {initials}
+    </div>
+  );
+};
+
+/** Modal Lightbox para ampliar la foto de perfil */
+const FotoModal = ({ url, nombre, onClose }) => {
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setHasError(false);
+    if (url) {
+      console.log('[DEBUG] Ampliando foto de perfil URL:', url);
+    }
+  }, [url]);
+
+  if (!url) return null;
+
+  return (
+    <div 
+      className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in"
+      onClick={onClose}
+    >
+      <div 
+        className="relative max-w-2xl max-h-[85vh] bg-gray-900 rounded-3xl p-4 shadow-2xl overflow-hidden flex flex-col items-center border border-gray-700"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button 
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 w-9 h-9 bg-black/60 hover:bg-black/90 text-white rounded-full flex items-center justify-center transition-all cursor-pointer border border-white/20"
+          title="Cerrar"
+        >
+          <FiX className="w-5 h-5" />
+        </button>
+
+        {hasError ? (
+          <div className="flex flex-col items-center justify-center p-8 text-center text-gray-300 min-w-[280px]">
+            <AvatarPlaceholder nombre={nombre} size="lg" />
+            <p className="mt-4 text-sm font-semibold text-gray-300">No se pudo cargar la imagen</p>
+            <span className="text-xs text-gray-500 mt-1 break-all max-w-xs">{url}</span>
+          </div>
+        ) : (
+          <img 
+            src={url} 
+            alt={nombre ? `Foto de ${nombre}` : 'Foto de perfil ampliada'} 
+            className="max-w-[85vw] max-h-[75vh] object-contain rounded-2xl shadow-md"
+            onError={() => {
+              console.error('[DEBUG] Error al cargar la foto de perfil en el modal:', url);
+              setHasError(true);
+            }}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
 export default function Perfil() {
   const { t } = useTranslation();
   const { user, updateLocalUser } = useAuth();
@@ -31,6 +99,7 @@ export default function Perfil() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [modalFoto, setModalFoto] = useState(null); // { url, nombre }
 
   // Editable fields
   const [nombreCompleto, setNombreCompleto] = useState('');
@@ -38,11 +107,16 @@ export default function Perfil() {
   const [tipoDocumento, setTipoDocumento] = useState('CC');
   const [numeroDocumento, setNumeroDocumento] = useState('');
 
-  const getFileUrl = (path) => {
-    if (!path) return null;
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  const getFotoUrl = (path) => {
+    if (!path || typeof path !== 'string') return null;
+    const trimmed = path.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+
+    let baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:3000').trim();
+    baseUrl = baseUrl.replace(/\/api\/?$/i, '').replace(/\/+$/, '');
+
+    const cleanPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
     return `${baseUrl}${cleanPath}`;
   };
 
@@ -267,10 +341,16 @@ export default function Perfil() {
         {/* Left Column (Avatar & Quick Info) */}
         <div className="space-y-6">
           <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-3xl p-8 shadow-sm flex flex-col items-center text-center">
-            <div className="w-32 h-32 bg-gray-100 dark:bg-gray-700 rounded-full border-4 border-white dark:border-gray-800 shadow-md flex items-center justify-center mb-4 text-[#407754] dark:text-emerald-400 relative overflow-hidden">
+            <div 
+              onClick={() => user?.foto_perfil_ruta && setModalFoto({ url: getFotoUrl(user.foto_perfil_ruta), nombre: displayNombre })}
+              className={`w-32 h-32 bg-gray-100 dark:bg-gray-700 rounded-full border-4 border-white dark:border-gray-800 shadow-md flex items-center justify-center mb-4 text-[#407754] dark:text-emerald-400 relative overflow-hidden ${
+                user?.foto_perfil_ruta ? 'cursor-pointer hover:opacity-90 hover:scale-105 transition-all' : ''
+              }`}
+              title={user?.foto_perfil_ruta ? 'Ver foto de perfil' : ''}
+            >
               {user?.foto_perfil_ruta ? (
                 <img
-                  src={getFileUrl(user.foto_perfil_ruta)}
+                  src={getFotoUrl(user.foto_perfil_ruta)}
                   alt="Foto de perfil"
                   className="w-full h-full object-cover"
                 />
@@ -285,40 +365,42 @@ export default function Perfil() {
                user?.rol || t('sidebar.instructor', 'Instructor')}
             </span>
 
-            {/* Foto de Perfil Controls */}
-            <div className="mt-5 w-full flex flex-col items-center gap-2">
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="hidden"
-                id="foto-upload-input"
-                onChange={handlePhotoChange}
-                disabled={uploadingPhoto}
-              />
-              <div className="flex gap-2 w-full">
-                <label
-                  htmlFor="foto-upload-input"
-                  className={`flex-1 py-2 px-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-bold text-xs rounded-xl transition-all cursor-pointer text-center flex items-center justify-center gap-1.5 shadow-xs ${
-                    uploadingPhoto ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                >
-                  <FiUploadCloud className="w-4 h-4" />
-                  {uploadingPhoto ? 'Subiendo...' : (user?.foto_perfil_ruta ? 'Cambiar Foto' : 'Subir Foto')}
-                </label>
-
-                {user?.foto_perfil_ruta && (
-                  <button
-                    type="button"
-                    onClick={handleRemovePhoto}
-                    disabled={uploadingPhoto}
-                    className="py-2 px-3 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center"
-                    title="Eliminar foto de perfil"
+            {/* Foto de Perfil Controls - Solo visibles en Modo Edición */}
+            {isEditing && (
+              <div className="mt-5 w-full flex flex-col items-center gap-2 animate-fade-in">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  id="foto-upload-input"
+                  onChange={handlePhotoChange}
+                  disabled={uploadingPhoto}
+                />
+                <div className="flex gap-2 w-full">
+                  <label
+                    htmlFor="foto-upload-input"
+                    className={`flex-1 py-2 px-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-bold text-xs rounded-xl transition-all cursor-pointer text-center flex items-center justify-center gap-1.5 shadow-xs ${
+                      uploadingPhoto ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                   >
-                    <FiX className="w-4 h-4" />
-                  </button>
-                )}
+                    <FiUploadCloud className="w-4 h-4" />
+                    {uploadingPhoto ? 'Subiendo...' : (user?.foto_perfil_ruta ? 'Cambiar Foto' : 'Subir Foto')}
+                  </label>
+
+                  {user?.foto_perfil_ruta && (
+                    <button
+                      type="button"
+                      onClick={handleRemovePhoto}
+                      disabled={uploadingPhoto}
+                      className="py-2 px-3 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center"
+                      title="Eliminar foto de perfil"
+                    >
+                      <FiX className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Firma Digital Card */}
@@ -543,6 +625,13 @@ export default function Perfil() {
 
         </div>
       </div>
+
+      {/* Lightbox Modal de Foto de Perfil */}
+      <FotoModal 
+        url={modalFoto?.url} 
+        nombre={modalFoto?.nombre} 
+        onClose={() => setModalFoto(null)} 
+      />
     </PageContainer>
   );
 }
