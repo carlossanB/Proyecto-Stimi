@@ -333,9 +333,9 @@ export class WebhooksService {
         origen: 'pagina_web'
       };
 
-      // Timeout manual de 180 segundos (3 minutos) para procesos pesados de IA en n8n
+      // Timeout manual de 360 segundos (6 minutos) para procesos pesados de IA en n8n
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 180000);
+      const timeout = setTimeout(() => controller.abort(), 360000);
 
       const response = await fetch(n8nWebhookUrl, {
         method: 'POST',

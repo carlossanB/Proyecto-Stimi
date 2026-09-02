@@ -61,8 +61,8 @@ export const enviarArchivoInforme = async (
     '/webhooks/chat/upload',
     formData,
     {
-      // Timeout extendido a 3 minutos: n8n procesa 3 lotes de OpenAI en paralelo
-      timeout: 180000,
+      // Timeout extendido a 6 minutos: n8n puede tardar más en procesar GC con OpenAI
+      timeout: 360000,
       headers: {
         // Eliminar el Content-Type fijo de la instancia axios para que el browser
         // establezca automáticamente 'multipart/form-data; boundary=...' al detectar FormData.
