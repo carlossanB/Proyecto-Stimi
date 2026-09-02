@@ -238,45 +238,74 @@ export class WebhooksService {
       throw new NotFoundException('Usuario no encontrado en el sistema.');
     }
 
-    let cedula = usuario.numero_documento;
-    let tipoInforme = dto.tipo_informe?.toUpperCase() || 'GC';
-    const periodo = dto.periodo || '';
+    const cedula = usuario.numero_documento;
+    const periodo = (dto.periodo || '').trim();
 
-    // Parsear el periodo original como fallback: "Julio 2026" → mes="Julio", anio="2026"
-    const partesPeriodo = periodo.trim().split(' ');
-    let mes = partesPeriodo[0] ?? 'Desconocido';
-    let anio = partesPeriodo[1] ?? String(new Date().getFullYear());
-
-    // Detectar datos desde el nombre del archivo
-    if (file && file.originalname) {
-      const fileNameUpper = file.originalname.toUpperCase();
-      
-      if (fileNameUpper.startsWith('GF_')) {
-        tipoInforme = 'GF';
-      } else if (fileNameUpper.startsWith('GC_')) {
-        tipoInforme = 'GC';
-      }
-
-      // Intentar extraer cédula, mes y año del nombre (ej: GF_123456_MAYO_2026.pdf)
-      const baseName = fileNameUpper.replace(/\.PDF$/, '');
-      const parts = baseName.split('_');
-
-      if (parts.length >= 4 && (parts[0] === 'GC' || parts[0] === 'GF')) {
-        // Cédula suele ser el segundo elemento
-        if (/^\d+$/.test(parts[1])) {
-          cedula = parts[1];
-        }
-        
-        // Año y Mes suelen ser los últimos dos elementos
-        const possibleAnio = parts[parts.length - 1];
-        const possibleMes = parts[parts.length - 2];
-        
-        if (/^\d{4}$/.test(possibleAnio)) {
-          anio = possibleAnio;
-          mes = possibleMes;
-        }
-      }
+    // 1.1. Parsear periodo seleccionado en la plataforma (ej: "Septiembre 2026")
+    const partesPeriodo = periodo.split(/\s+/);
+    if (partesPeriodo.length < 2) {
+      throw new BadRequestException(
+        'El periodo seleccionado en la plataforma no es válido (Ejemplo: "Septiembre 2026").',
+      );
     }
+
+    const mesUiNombre = partesPeriodo[0];
+    const anioUi = partesPeriodo[1];
+
+    const MES_MAP: Record<string, string> = {
+      ENERO: 'ENE',
+      FEBRERO: 'FEB',
+      MARZO: 'MAR',
+      ABRIL: 'ABR',
+      MAYO: 'MAY',
+      JUNIO: 'JUN',
+      JULIO: 'JUL',
+      AGOSTO: 'AGO',
+      SEPTIEMBRE: 'SEP',
+      SETIEMBRE: 'SEP',
+      OCTUBRE: 'OCT',
+      NOVIEMBRE: 'NOV',
+      DICIEMBRE: 'DIC',
+    };
+
+    const mesUiClean = mesUiNombre
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase();
+    const mesUiAbbr = MES_MAP[mesUiClean] || mesUiClean;
+
+    // 1.2. Validar nomenclatura estricta del archivo PDF
+    const fileName = file?.originalname || '';
+    const regexNomenclatura =
+      /^(GC|GF)_(\d{6,12})_(\d+)_(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC)_(\d{4})\.pdf$/i;
+    const match = fileName.match(regexNomenclatura);
+
+    if (!match) {
+      throw new BadRequestException(
+        'El nombre del archivo no cumple con la nomenclatura requerida (Ejemplo: GF_12345678_1234_SEP_2026.pdf).',
+      );
+    }
+
+    const [, tipoFile, , , mesFile, anioFile] = match;
+    const tipoInforme = tipoFile.toUpperCase();
+    const mesFileUpper = mesFile.toUpperCase();
+
+    // 1.3. Validar coincidencia del mes con la UI
+    if (mesFileUpper !== mesUiAbbr) {
+      throw new BadRequestException(
+        `El mes del archivo (${mesFileUpper}) no coincide con el periodo seleccionado en la plataforma (${mesUiAbbr}).`,
+      );
+    }
+
+    // 1.4. Validar coincidencia del año con la UI
+    if (anioFile !== anioUi) {
+      throw new BadRequestException(
+        `El año del archivo (${anioFile}) no coincide con el periodo seleccionado en la plataforma (${anioUi}).`,
+      );
+    }
+
+    const mes = mesFileUpper;
+    const anio = anioFile;
 
     // 2. Leer archivo PDF y convertir a Base64
     let pdfBase64: string;
