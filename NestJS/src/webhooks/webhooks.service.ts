@@ -312,7 +312,7 @@ export class WebhooksService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(n8nWebhookKey && { 'x-webhook-key': n8nWebhookKey, 'Authorization': n8nWebhookKey }),
+          ...(n8nWebhookKey && { clave: n8nWebhookKey }),
         },
         body: JSON.stringify(payload),
         signal: controller.signal,
