@@ -65,25 +65,54 @@ export default function Dashboard() {
     );
   }
 
+  // Helper for status normalization (synonyms: validado/aprobado, devuelto/rechazado)
+  const getNormalizedState = (statusStr) => {
+    if (!statusStr) return '';
+    const s = statusStr.toString().trim().toLowerCase();
+    if (s === 'validado' || s === 'aprobado') return 'validado';
+    if (s === 'devuelto' || s === 'rechazado') return 'devuelto';
+    if (s === 'pendiente') return 'pendiente';
+    if (s === 'borrador') return 'borrador';
+    return s;
+  };
+
   // Calculate metrics for active period
   const totalInstructores = instructores.length;
   const instructoresActivos = instructores.filter(i => i.estado === 'activo' || i.estado_cuenta === 'aprobado').length;
 
-  const mesActivo = periodoInfo?.mesActivo;
-  const informesPeriodoActivo = informes.filter(i => !mesActivo || i.periodo === mesActivo);
+  const activePeriodStr = (periodoInfo?.mesActivo || '').trim().toLowerCase();
 
-  const pendientesRevision = informesPeriodoActivo.filter(i => i.estado?.toLowerCase() === 'pendiente').length;
-  const informesValidados = informesPeriodoActivo.filter(i => i.estado?.toLowerCase() === 'validado' || i.estado?.toLowerCase() === 'aprobado').length;
+  // Filter reports by active period string (trim & case-insensitive)
+  const informesPeriodoActivo = informes.filter(i => {
+    if (!activePeriodStr || activePeriodStr === 'todos') return true;
+    const reportPeriod = (i.periodo || '').trim().toLowerCase();
+    return reportPeriod === activePeriodStr;
+  });
+
+  const targetInformes = informesPeriodoActivo.length > 0
+    ? informesPeriodoActivo
+    : informes;
+
+  const pendientesRevision = targetInformes.filter(i => getNormalizedState(i.estado) === 'pendiente').length;
+  const informesValidados = targetInformes.filter(i => getNormalizedState(i.estado) === 'validado').length;
   
-  const totalInformesPeriodo = informesPeriodoActivo.length;
-  const cumplimientoPorcentaje = totalInformesPeriodo > 0 
-    ? Math.round((informesValidados / totalInformesPeriodo) * 100)
+  const totalInformesTarget = targetInformes.length;
+  const cumplimientoPorcentaje = totalInformesTarget > 0 
+    ? Math.round((informesValidados / totalInformesTarget) * 100)
     : 0;
 
-  // Instructors without complete validated reports (or with pending submissions) in active period
+  // Instructors without complete validated reports in active period
   const instructoresSinInforme = instructores.map(inst => {
-    const informesInst = informesPeriodoActivo.filter(i => i.instructorId === inst.id || i.instructorNombre === inst.nombre);
-    const validadosInst = informesInst.filter(i => i.estado?.toLowerCase() === 'validado' || i.estado?.toLowerCase() === 'aprobado').length;
+    const instId = inst.id?.toString();
+    const instName = (inst.nombre || '').trim().toLowerCase();
+
+    const informesInst = targetInformes.filter(i => {
+      const rId = i.instructorId?.toString();
+      const rName = (i.instructorNombre || '').trim().toLowerCase();
+      return (rId && rId === instId) || (rName && rName === instName);
+    });
+
+    const validadosInst = informesInst.filter(i => getNormalizedState(i.estado) === 'validado').length;
     return {
       ...inst,
       informesPendientes: Math.max(0, 2 - validadosInst)

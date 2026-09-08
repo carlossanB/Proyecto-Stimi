@@ -20,17 +20,26 @@ export const reportesService = {
         reports = reports.filter(r => {
            if (!r.periodo) return false;
            const reportMesStr = `${mesesNombres[r.periodo.mes - 1]} ${r.periodo.anio}`;
-           return reportMesStr === params.mes;
+           return reportMesStr.trim().toLowerCase() === params.mes.trim().toLowerCase();
         });
       }
     }
 
     const totalInformes = reports.length;
-    const aprobados = reports.filter(r => r.estado === 'validado' || r.estado === 'aprobado').length;
-    const rechazados = reports.filter(r => r.estado === 'devuelto' || r.estado === 'rechazado').length;
-    const pendientes = totalInformes - aprobados - rechazados;
+    const aprobados = reports.filter(r => {
+      const st = (r.estado || '').toLowerCase();
+      return st === 'validado' || st === 'aprobado';
+    }).length;
+    const rechazados = reports.filter(r => {
+      const st = (r.estado || '').toLowerCase();
+      return st === 'devuelto' || st === 'rechazado';
+    }).length;
+    const pendientes = reports.filter(r => {
+      const st = (r.estado || '').toLowerCase();
+      return st === 'pendiente';
+    }).length;
 
-    const tasaCumplimiento = totalInformes > 0 ? Math.round((aprobados / totalInformes) * 100) : 100;
+    const tasaCumplimiento = totalInformes > 0 ? Math.round((aprobados / totalInformes) * 100) : 0;
 
     const distribucionEstados = {
       aprobadosPorcentaje: totalInformes > 0 ? parseFloat(((aprobados / totalInformes) * 100).toFixed(1)) : 0,
