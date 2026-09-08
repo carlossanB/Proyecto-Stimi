@@ -502,6 +502,12 @@ export default function Reportes() {
         </div>
       </div>
 
+      {/* Metrics Scope Badge */}
+      <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 font-medium px-1">
+        <span>{t('reportes.scopeLabel', 'Alcance del reporte:')} <strong className="text-gray-800 dark:text-gray-200">{selectedMes === 'todos' ? t('reportes.allMonthsScope', 'Histórico (Todos los meses)') : `${t('reportes.monthScope', 'Mes:')} ${selectedMes}`}</strong></span>
+        {selectedInst !== 'todos' && <span className="bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full text-[11px] font-semibold">{t('reportes.instructorFiltered', 'Instructor filtrado')}</span>}
+      </div>
+
       {/* Metrics Row */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 shadow-sm flex items-center gap-3">

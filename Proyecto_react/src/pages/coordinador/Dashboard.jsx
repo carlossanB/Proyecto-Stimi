@@ -76,37 +76,33 @@ export default function Dashboard() {
     return s;
   };
 
-  // Calculate metrics for active period
+  // Calculate metrics strictly for active period
   const totalInstructores = instructores.length;
   const instructoresActivos = instructores.filter(i => i.estado === 'activo' || i.estado_cuenta === 'aprobado').length;
 
   const activePeriodStr = (periodoInfo?.mesActivo || '').trim().toLowerCase();
 
-  // Filter reports by active period string (trim & case-insensitive)
+  // Strictly filter reports by active period string (trim & case-insensitive)
   const informesPeriodoActivo = informes.filter(i => {
     if (!activePeriodStr || activePeriodStr === 'todos') return true;
     const reportPeriod = (i.periodo || '').trim().toLowerCase();
     return reportPeriod === activePeriodStr;
   });
 
-  const targetInformes = informesPeriodoActivo.length > 0
-    ? informesPeriodoActivo
-    : informes;
-
-  const pendientesRevision = targetInformes.filter(i => getNormalizedState(i.estado) === 'pendiente').length;
-  const informesValidados = targetInformes.filter(i => getNormalizedState(i.estado) === 'validado').length;
+  const pendientesRevision = informesPeriodoActivo.filter(i => getNormalizedState(i.estado) === 'pendiente').length;
+  const informesValidados = informesPeriodoActivo.filter(i => getNormalizedState(i.estado) === 'validado').length;
   
-  const totalInformesTarget = targetInformes.length;
-  const cumplimientoPorcentaje = totalInformesTarget > 0 
-    ? Math.round((informesValidados / totalInformesTarget) * 100)
+  const totalInformesPeriodo = informesPeriodoActivo.length;
+  const cumplimientoPorcentaje = totalInformesPeriodo > 0 
+    ? Math.round((informesValidados / totalInformesPeriodo) * 100)
     : 0;
 
-  // Instructors without complete validated reports in active period
+  // Instructors missing GC or GF (2 reports per period) in the active period
   const instructoresSinInforme = instructores.map(inst => {
     const instId = inst.id?.toString();
     const instName = (inst.nombre || '').trim().toLowerCase();
 
-    const informesInst = targetInformes.filter(i => {
+    const informesInst = informesPeriodoActivo.filter(i => {
       const rId = i.instructorId?.toString();
       const rName = (i.instructorNombre || '').trim().toLowerCase();
       return (rId && rId === instId) || (rName && rName === instName);
