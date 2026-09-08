@@ -16,9 +16,11 @@ import { toast } from 'sonner';
 import PeriodoCard from '../../components/PeriodoCard';
 import StatCard from '../../components/StatCard';
 import PageContainer from '../../components/PageContainer';
+import { usePeriodo } from '../../components/PeriodoContext';
 
 export default function Dashboard() {
   const { t } = useTranslation();
+  const { periodoInfo } = usePeriodo();
   const [instructores, setInstructores] = useState([]);
   const [informes, setInformes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -63,17 +65,30 @@ export default function Dashboard() {
     );
   }
 
-  // Calculate metrics
+  // Calculate metrics for active period
   const totalInstructores = instructores.length;
-  const totalAprendices = instructores.reduce((acc, curr) => acc + curr.totalAprendices, 0);
-  const pendientesRevision = informes.filter(i => i.estado === 'pendiente').length;
-  const informesValidados = informes.filter(i => i.estado === 'aprobado').length;
-  const cumplimientoPorcentaje = totalInstructores > 0 
-    ? Math.round((informesValidados / (totalInstructores * 2)) * 100) // GC + GF = 2 reports per instructor
+  const instructoresActivos = instructores.filter(i => i.estado === 'activo' || i.estado_cuenta === 'aprobado').length;
+
+  const mesActivo = periodoInfo?.mesActivo;
+  const informesPeriodoActivo = informes.filter(i => !mesActivo || i.periodo === mesActivo);
+
+  const pendientesRevision = informesPeriodoActivo.filter(i => i.estado?.toLowerCase() === 'pendiente').length;
+  const informesValidados = informesPeriodoActivo.filter(i => i.estado?.toLowerCase() === 'validado' || i.estado?.toLowerCase() === 'aprobado').length;
+  
+  const totalInformesPeriodo = informesPeriodoActivo.length;
+  const cumplimientoPorcentaje = totalInformesPeriodo > 0 
+    ? Math.round((informesValidados / totalInformesPeriodo) * 100)
     : 0;
 
-  // Instructors without reports or with pending submissions (e.g., informesPendientes > 0)
-  const instructoresSinInforme = instructores.filter(inst => inst.informesPendientes > 0);
+  // Instructors without complete validated reports (or with pending submissions) in active period
+  const instructoresSinInforme = instructores.map(inst => {
+    const informesInst = informesPeriodoActivo.filter(i => i.instructorId === inst.id || i.instructorNombre === inst.nombre);
+    const validadosInst = informesInst.filter(i => i.estado?.toLowerCase() === 'validado' || i.estado?.toLowerCase() === 'aprobado').length;
+    return {
+      ...inst,
+      informesPendientes: Math.max(0, 2 - validadosInst)
+    };
+  }).filter(inst => inst.informesPendientes > 0);
 
   return (
     <PageContainer>
@@ -95,7 +110,7 @@ export default function Dashboard() {
           icon={FiUsers}
           title={t('coordinatorDashboard.totalInstructors', 'Total Instructores')}
           value={totalInstructores}
-          subtext={t('coordinatorDashboard.activeApprentices', '{{count}} instructores activos', { count: totalAprendices })}
+          subtext={t('coordinatorDashboard.activeInstructors', '{{count}} instructores activos', { count: instructoresActivos })}
           iconBgClass="bg-blue-50 dark:bg-blue-950/40"
           iconColorClass="text-blue-500 dark:text-blue-400"
         />

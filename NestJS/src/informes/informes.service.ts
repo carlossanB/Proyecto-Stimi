@@ -158,6 +158,7 @@ export class InformesService {
       .leftJoinAndSelect('informe.usuario', 'usuario')
       .leftJoinAndSelect('usuario.area', 'area')
       .leftJoinAndSelect('informe.periodo', 'periodo')
+      .leftJoinAndSelect('informe.versiones', 'versiones')
       .where('informe.tenant_id = :tenantId', { tenantId });
 
     if (filtros.instructorId) {
@@ -178,24 +179,40 @@ export class InformesService {
     let aprobados = 0;
     let devueltos = 0;
     let pendientes = 0;
+    let borradores = 0;
     const cumplimientoPorInstructor: Record<string, any> = {};
 
     informes.forEach(informe => {
-      const isApproved = informe.estado === 'validado' || informe.estado === 'aprobado';
-      const isRejected = informe.estado === 'devuelto' || informe.estado === 'rechazado';
+      if (informe.versiones && informe.versiones.length > 0) {
+        informe.versiones.sort((a, b) => b.numero_version - a.numero_version);
+        const latest = informe.versiones[0];
+        if (latest && latest.estado) {
+          informe.estado = latest.estado;
+        }
+      }
+
+      const st = (informe.estado || '').toLowerCase();
+      const isApproved = st === 'validado' || st === 'aprobado';
+      const isRejected = st === 'devuelto' || st === 'rechazado';
+      const isPending = st === 'pendiente';
+      const isDraft = st === 'borrador';
       
       if (isApproved) aprobados++;
       else if (isRejected) devueltos++;
+      else if (isPending) pendientes++;
+      else if (isDraft) borradores++;
       else pendientes++;
 
-      const nombre = informe.usuario.nombre_completo;
+      const nombre = informe.usuario?.nombre_completo || 'Sin nombre';
       if (!cumplimientoPorInstructor[nombre]) {
-        cumplimientoPorInstructor[nombre] = { totales: 0, aprobados: 0, devueltos: 0, pendientes: 0 };
+        cumplimientoPorInstructor[nombre] = { totales: 0, aprobados: 0, devueltos: 0, pendientes: 0, borradores: 0 };
       }
       
       cumplimientoPorInstructor[nombre].totales++;
       if (isApproved) cumplimientoPorInstructor[nombre].aprobados++;
       else if (isRejected) cumplimientoPorInstructor[nombre].devueltos++;
+      else if (isPending) cumplimientoPorInstructor[nombre].pendientes++;
+      else if (isDraft) cumplimientoPorInstructor[nombre].borradores++;
       else cumplimientoPorInstructor[nombre].pendientes++;
     });
 
@@ -208,6 +225,7 @@ export class InformesService {
         aprobados,
         rechazados: devueltos,
         pendientes,
+        borradores,
         porcentaje_cumplimiento: parseFloat(porcentaje_cumplimiento.toFixed(2)),
       },
       datasets: {
@@ -216,6 +234,7 @@ export class InformesService {
           Aprobados: aprobados,
           Rechazados: devueltos,
           Pendientes: pendientes,
+          Borradores: borradores,
         }
       }
     };
@@ -229,22 +248,25 @@ export class InformesService {
     const instructoresQb = this.personaRepository.createQueryBuilder('persona')
       .leftJoinAndSelect('persona.rol', 'rol')
       .leftJoinAndSelect('persona.area', 'area')
-      .where('LOWER(rol.nombre) = :rolName', { rolName: 'instructor' });
+      .where('LOWER(rol.nombre_rol) = :rolName', { rolName: 'instructor' });
 
     if (areaId) {
       instructoresQb.andWhere('(area.id_area = :areaId OR area.id_area IS NULL)', { areaId });
     }
 
     const instructores = await instructoresQb.getMany();
+    const instructoresActivos = instructores.filter(i => i.estado_cuenta === 'aprobado').length;
 
     const instructoresMap = new Map<number, {
       id_usuario: number;
       nombre_completo: string;
       correo: string;
+      estado_cuenta: string;
       totales: number;
       pendientes: number;
       validados: number;
       devueltos: number;
+      borradores: number;
     }>();
 
     instructores.forEach((inst) => {
@@ -252,10 +274,12 @@ export class InformesService {
         id_usuario: inst.id_usuario,
         nombre_completo: inst.nombre_completo,
         correo: inst.correo,
+        estado_cuenta: inst.estado_cuenta,
         totales: 0,
         pendientes: 0,
         validados: 0,
         devueltos: 0,
+        borradores: 0,
       });
     });
 
@@ -280,6 +304,7 @@ export class InformesService {
     let totalPendientes = 0;
     let totalValidados = 0;
     let totalDevueltos = 0;
+    let totalBorradores = 0;
 
     informes.forEach((report) => {
       if (report.versiones && report.versiones.length > 0) {
@@ -290,11 +315,15 @@ export class InformesService {
         }
       }
 
-      const isApproved = report.estado === 'validado' || report.estado === 'aprobado';
-      const isRejected = report.estado === 'devuelto' || report.estado === 'rechazado';
+      const st = (report.estado || '').toLowerCase();
+      const isApproved = st === 'validado' || st === 'aprobado';
+      const isRejected = st === 'devuelto' || st === 'rechazado';
+      const isPending = st === 'pendiente';
+      const isDraft = st === 'borrador';
 
       if (isApproved) totalValidados++;
       else if (isRejected) totalDevueltos++;
+      else if (isDraft) totalBorradores++;
       else totalPendientes++;
 
       const u = report.usuario;
@@ -305,10 +334,12 @@ export class InformesService {
             id_usuario: u.id_usuario,
             nombre_completo: u.nombre_completo,
             correo: u.correo,
+            estado_cuenta: u.estado_cuenta,
             totales: 0,
             pendientes: 0,
             validados: 0,
             devueltos: 0,
+            borradores: 0,
           };
           instructoresMap.set(u.id_usuario, instData);
         }
@@ -316,16 +347,24 @@ export class InformesService {
         instData.totales++;
         if (isApproved) instData.validados++;
         else if (isRejected) instData.devueltos++;
+        else if (isDraft) instData.borradores++;
         else instData.pendientes++;
       }
     });
 
+    const totalInformes = informes.length;
+    const porcentajeCumplimiento = totalInformes > 0 ? parseFloat(((totalValidados / totalInformes) * 100).toFixed(2)) : 0;
+
     return {
       totales: {
-        total: informes.length,
+        total_instructores: instructores.length,
+        instructores_activos: instructoresActivos,
+        total_informes: totalInformes,
         pendientes: totalPendientes,
         validados: totalValidados,
         devueltos: totalDevueltos,
+        borradores: totalBorradores,
+        porcentaje_cumplimiento: porcentajeCumplimiento,
       },
       instructores: Array.from(instructoresMap.values()),
     };

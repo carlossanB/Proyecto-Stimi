@@ -56,13 +56,13 @@ export function AuthProvider({ children }) {
         // Si falla (token expirado, sin red), no hacemos nada — el logout
         // lo maneja el interceptor de Axios si es 401.
       });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // 
   }, []);
   // ────────────────────────────────────────────────────────────────────────────
 
   const login = async (email, password) => {
     try {
-      // Backend expects { username, password }
+      // Envía el correo y la contraseña al backend para autenticación.
       const response = await api.post('/auth/login', {
         username: email,
         password: password,
@@ -70,8 +70,8 @@ export function AuthProvider({ children }) {
 
       const { token, user: apiUser } = response.data;
 
-      // Save token to localStorage
-      localStorage.setItem('stimi_token', token);
+      // Guarda el token en localStorage
+      localStorage.setItem('stimi_token', token); // guarda el token
 
       const rolStr = typeof apiUser.rol === 'object' && apiUser.rol !== null
         ? apiUser.rol.nombre_rol
@@ -81,7 +81,7 @@ export function AuthProvider({ children }) {
         ? apiUser.area.nombre_area
         : apiUser.area;
 
-      // Construct user data object, mapping all fields from the backend response
+      // Constructor del objeto de datos del usuario, mapeando todos los campos de la respuesta del backend
       const userData = {
         id_usuario: apiUser.id_usuario,
         email: apiUser.correo,
@@ -100,7 +100,7 @@ export function AuthProvider({ children }) {
       };
 
       setUser(userData);
-      localStorage.setItem('stimi_user', JSON.stringify(userData));
+      localStorage.setItem('stimi_user', JSON.stringify(userData)); // guarda el usuario
       return userData;
     } catch (error) {
       console.error('Error during login:', error);

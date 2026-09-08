@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 import { Repository } from 'typeorm';
@@ -10,6 +10,8 @@ import { TenantContext } from '../common/tenant/tenant.context';
 
 @Injectable()
 export class PersonasService {
+  private readonly logger = new Logger(PersonasService.name);
+
   constructor(
     @InjectRepository(Persona)
     private readonly personaRepository: Repository<Persona>,
@@ -39,7 +41,7 @@ export class PersonasService {
       );
     }
 
-    const contrasenaHash = await bcrypt.hash(createPersonaDto.contrasena, 10);
+    const contrasenaHash = await bcrypt.hash(createPersonaDto.contrasena, 10); // hashea la contraseña
 
     const persona = this.personaRepository.create({
       nombre_completo: createPersonaDto.nombreCompleto.trim(),
@@ -146,13 +148,23 @@ export class PersonasService {
 
     // Enviar correo si el estado de cuenta cambió a aprobado o rechazado
     if (updatePersonaDto.estado_cuenta === 'aprobado' && previousState !== 'aprobado') {
-      this.mailService
-        .sendAccountApprovedEmail(saved.correo, saved.nombre_completo)
-        .catch(() => {});
+      try {
+        await this.mailService.sendAccountApprovedEmail(saved.correo, saved.nombre_completo);
+      } catch (err: any) {
+        this.logger.error(
+          `Error al enviar correo de aprobación a ${saved.correo}: ${err?.message || err}`,
+          err?.stack,
+        );
+      }
     } else if (updatePersonaDto.estado_cuenta === 'rechazado' && previousState !== 'rechazado') {
-      this.mailService
-        .sendAccountRejectedEmail(saved.correo, saved.nombre_completo, saved.motivo_rechazo)
-        .catch(() => {});
+      try {
+        await this.mailService.sendAccountRejectedEmail(saved.correo, saved.nombre_completo, saved.motivo_rechazo);
+      } catch (err: any) {
+        this.logger.error(
+          `Error al enviar correo de rechazo a ${saved.correo}: ${err?.message || err}`,
+          err?.stack,
+        );
+      }
     }
 
     return saved;

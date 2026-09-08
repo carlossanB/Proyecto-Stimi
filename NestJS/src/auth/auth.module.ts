@@ -18,13 +18,13 @@ import { MailModule } from '../mail/mail.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'super-secret-key-12345',
-        signOptions: { expiresIn: '24h' },
+        secret: configService.get<string>('JWT_SECRET') || 'super-secret-key-12345', // firma del token
+        signOptions: { expiresIn: '24h' }, // tiempo de expiración del token
       }),
     }),
   ],
-  controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [AuthService, JwtModule, PassportModule],
+  controllers: [AuthController], // controlador de auth
+  providers: [AuthService, JwtStrategy], // proveedores de auth
+  exports: [AuthService, JwtModule, PassportModule], // exportación de auth
 })
 export class AuthModule {}

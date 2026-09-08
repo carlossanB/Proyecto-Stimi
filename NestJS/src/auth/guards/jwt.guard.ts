@@ -2,13 +2,13 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 
-@Injectable()
-export class JwtGuard implements CanActivate {
+@Injectable() // extrae el token del encabezado y verifica que sea valido
+export class JwtGuard implements CanActivate { // implementa CanActivate
   constructor(private readonly jwtService: JwtService) {}
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<Request>();
-    const token = this.extractTokenFromHeader(request);
+  async canActivate(context: ExecutionContext): Promise<boolean> { // permite o deniega el acceso
+    const request = context.switchToHttp().getRequest<Request>(); // obtiene la peticion
+    const token = this.extractTokenFromHeader(request); // extrae el token del encabezado
     
     if (!token) {
       throw new UnauthorizedException('Token no proporcionado');

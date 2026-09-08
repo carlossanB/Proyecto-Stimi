@@ -1,11 +1,11 @@
 import { CanActivate, ExecutionContext, Injectable, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
-@Injectable()
-export class RolesGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+@Injectable() // Guard(protector) que se puede usar en toda la aplicación
+export class RolesGuard implements CanActivate { // implementa CanActivate
+  constructor(private reflector: Reflector) {} // reflector es una instancia de Reflector
 
-  canActivate(context: ExecutionContext): boolean {
+  canActivate(context: ExecutionContext): boolean { // permite o deniega el acceso
     const requiredRoles = this.reflector.getAllAndOverride<string[]>('roles', [
       context.getHandler(),
       context.getClass(),

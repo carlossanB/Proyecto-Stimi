@@ -23,32 +23,32 @@ export class AuthService {
   // ─── LOGIN ───────────────────────────────────────────────────────────────────
 
   async login(identifier: string, contrasena: string) {
-    const user = await this.personasService.findByEmailOrDocument(identifier);
+    const user = await this.personasService.findByEmailOrDocument(identifier); // busca el usuario por correo
     if (!user) {
       throw new UnauthorizedException('Credenciales incorrectas');
     }
 
-    const matches = await bcrypt.compare(contrasena, user.contrasena_hash);
+    const matches = await bcrypt.compare(contrasena, user.contrasena_hash); // compara la contraseña
     if (!matches) {
       throw new UnauthorizedException('Credenciales incorrectas');
     }
 
-    if (user.estado_cuenta !== 'aprobado') {
+    if (user.estado_cuenta !== 'aprobado') { // verifica si la cuenta esta aprobada
       throw new UnauthorizedException(
         'Su cuenta está pendiente de aprobación por el coordinador',
       );
     }
 
-    const payload = {
+    const payload = { // crea el payload del JWT
       sub: user.id_usuario,
       email: user.correo,
       rol: user.rol?.nombre_rol ?? 'instructor',
       tenantId: user.tenant_id ?? 'default',
     };
 
-    const token = this.jwtService.sign(payload);
+    const token = this.jwtService.sign(payload); // firma el token
 
-    return {
+    return { 
       token,
       user: {
         id_usuario: user.id_usuario,

@@ -12,6 +12,7 @@ export const instructoresService = {
         email: u.correo,
         documento: u.numero_documento,
         area: u.area?.nombre_area ?? '',
+        estado_cuenta: u.estado_cuenta,
         estado: u.estado_cuenta === 'aprobado' ? 'activo' : 'inactivo',
         fichas: [], // Mocked layout array
         totalAprendices: 0,
