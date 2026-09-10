@@ -15,7 +15,7 @@ const MESES = [
 const QUICK_RESPONSES = {
   pendientes: {
     question: '¿Cuáles son mis informes pendientes?',
-    answer: '📋 **Informes pendientes para Julio 2026:**\n\n• **Informe GC** (Gestión Contractual - GTH-F-062 V10) → No cargado\n• **Informe GF** (Gestión Financiera) → No cargado\n\n⏰ Fecha límite: **31 de julio de 2026** a las 23:59.\n\n💡 *Puedes adjuntar tu informe en formato PDF usando el botón de clip (📎) para que lo analice automáticamente.*',
+    answer: '📋 **Informes pendientes para Julio 2026:**\n\n• **Informe GC** (Gestión Contractual - GTH-F-062 V3) → No cargado\n• **Informe GF** (Gestión Financiera) → No cargado\n\n⏰ Fecha límite: **31 de julio de 2026** a las 23:59.\n\n💡 *Puedes adjuntar tu informe en formato PDF usando el botón de clip (📎) para que lo analice automáticamente.*',
   },
   cumplimiento: {
     question: '¿Cuál es mi porcentaje de cumplimiento?',
@@ -23,7 +23,7 @@ const QUICK_RESPONSES = {
   },
   formatos: {
     question: '¿Dónde descargo los formatos GC y GF?',
-    answer: '📄 Formato **GC**: GTH-F-062 Versión 10.\n📄 Formato **GF**: Liquidación mensual.\n\nAmbos están disponibles en el módulo "Mis Informes". Recuerda firmarlos digitalmente antes de subirlos o adjuntarlos aquí para revisión previa.',
+    answer: '📄 Formato **GC**: GTH-F-062 Versión 3.\n📄 Formato **GF**: Liquidación mensual.\n\nAmbos están disponibles en el módulo "Mis Informes". Recuerda firmarlos digitalmente antes de subirlos o adjuntarlos aquí para revisión previa.',
   },
 };
 

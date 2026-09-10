@@ -769,7 +769,7 @@ const handleDescartarBorrador = async (reportId) => {
                   <div>
                     <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5">{t('periodoActual.step3Title', 'Paso 3 de 3 — Adjuntar archivo')}</label>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                      {selectedType === 'GC' ? t('periodoActual.formatGc', 'Formato GTH-F-062 V10 — Gestión Contractual') : t('periodoActual.formatGf', 'Gestión Financiera (Soporte)')}
+                      {selectedType === 'GC' ? t('periodoActual.formatGc', 'Formato GTH-F-062 V3 — Gestión Contractual') : t('periodoActual.formatGf', 'Gestión Financiera (Soporte)')}
                     </p>
                     
                     <input 

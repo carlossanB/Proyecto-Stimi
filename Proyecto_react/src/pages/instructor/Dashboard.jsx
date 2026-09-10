@@ -88,7 +88,7 @@ export default function Dashboard() {
                   </span>
                 </div>
                 <h4 className="font-bold text-gray-900 dark:text-gray-100">{t('revisionInformes.gcOption', 'Gestión Contractual (GC)')}</h4>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-4">Formato GTH-F-062 V10</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-4">Formato GTH-F-062 V3</p>
                 <button 
                   onClick={() => navigate('/instructor/informes', { state: { openModal: true, reportType: 'GC' } })}
                   className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors flex justify-center items-center gap-2 cursor-pointer"

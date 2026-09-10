@@ -424,7 +424,7 @@ export class InformesService {
       const informeGc = this.informeGcRepository.create({
         informe,
         contrato,
-        version_formato: 'GTH-F-062 V10',
+        version_formato: 'GTH-F-062 V3',
       });
       await this.informeGcRepository.save(informeGc);
     } else {
@@ -640,7 +640,7 @@ export class InformesService {
           await this.contratoRepository.save(contrato);
         }
         await this.informeGcRepository.save(
-          this.informeGcRepository.create({ informe: saved, contrato, version_formato: 'GTH-F-062 V10' }),
+          this.informeGcRepository.create({ informe: saved, contrato, version_formato: 'GTH-F-062 V3' }),
         );
       } else {
         await this.informeGfRepository.save(

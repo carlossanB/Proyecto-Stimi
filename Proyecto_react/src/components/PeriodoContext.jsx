@@ -28,7 +28,7 @@ export const calculateCurrentPeriod = () => {
     fechaLimite,
     habilitado: true,
     formatos: [
-      { nombre: 'Formato GTH-F-062 V10 (GC)', tipo: 'GC' },
+      { nombre: 'Formato GTH-F-062 V3 (GC)', tipo: 'GC' },
       { nombre: 'Formato GF (Gestión Financiera)', tipo: 'GF' }
     ]
   };

@@ -97,7 +97,7 @@ CREATE TABLE "informes" (
 -- 8. Informe de Gestión y Control (Informe GC)
 CREATE TABLE "informe_gc" (
   "id_informe_gc" SERIAL PRIMARY KEY,
-  "version_formato" VARCHAR(20) NOT NULL DEFAULT 'GTH-F-062 V10',
+  "version_formato" VARCHAR(20) NOT NULL DEFAULT 'GTH-F-062 V3',
   "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "deleted_at" TIMESTAMP,

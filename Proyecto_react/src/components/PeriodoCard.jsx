@@ -214,7 +214,7 @@ export default function PeriodoCard({ isEditable = false }) {
               
               <div className="mt-4 flex flex-wrap gap-2">
                 <span className="bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 text-[10px] sm:text-xs font-semibold px-2.5 py-1 rounded-lg border border-blue-200 dark:border-blue-900">
-                  Formato GTH-F-062 V10 (GC)
+                  Formato GTH-F-062 V3 (GC)
                 </span>
                 <span className="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-[10px] sm:text-xs font-semibold px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-900">
                   Formato GF (Gestión Financiera)

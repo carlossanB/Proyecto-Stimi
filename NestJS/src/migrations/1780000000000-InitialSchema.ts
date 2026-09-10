@@ -120,7 +120,7 @@ export class InitialSchema1780000000000 implements MigrationInterface {
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "informe_gc" (
         "id_informe_gc" SERIAL PRIMARY KEY,
-        "version_formato" VARCHAR(20) NOT NULL DEFAULT 'GTH-F-062 V10',
+        "version_formato" VARCHAR(20) NOT NULL DEFAULT 'GTH-F-062 V3',
         "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "deleted_at" TIMESTAMP,
