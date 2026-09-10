@@ -30,7 +30,7 @@ import { CoordinadorModule } from './coordinador/coordinador.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => {
-        const dbType = config.get<string>('DB_TYPE', 'sqlite');
+        const dbType = config.get<string>('DB_TYPE', 'postgres');
         const sync = config.get<string>('DB_SYNCHRONIZE') === 'true';
 
         if (dbType === 'postgres') {
