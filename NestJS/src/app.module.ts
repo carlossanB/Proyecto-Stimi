@@ -40,7 +40,7 @@ import { CoordinadorModule } from './coordinador/coordinador.module';
             port: config.get<number>('DB_PORT', 5432),
             username: config.get<string>('DB_USERNAME', 'postgres'),
             password: config.get<string>('DB_PASSWORD', 'postgres'),
-            database: config.get<string>('DB_NAME', 'sena'),
+            database: config.get<string>('DB_NAME', 'proyecto_formativo'),
             entities: [__dirname + '/**/*.entity{.ts,.js}'],
             migrations: [__dirname + '/migrations/*{.ts,.js}'],
             subscribers: [__dirname + '/**/*.subscriber{.ts,.js}'],
